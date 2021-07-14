@@ -1,0 +1,24 @@
+directive @juniper(
+    ownership: String = "borrowed",
+    infallible: Boolean = false,
+    with_time_zone: Boolean = true,
+    async: Boolean = false,
+    stream_item_infallible: Boolean = true,
+    stream_type: String = null
+) on FIELD_DEFINITION | SCALAR
+
+schema {
+    query: Query
+}
+
+type Query {
+    me: Me! @juniper(ownership: "owned", async: true)
+}
+
+interface Node {
+    id: ID! @juniper(ownership: "owned")
+}
+
+type Me implements Node {
+    id: ID! @juniper(ownership: "owned")
+}

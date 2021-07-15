@@ -9,10 +9,15 @@ directive @juniper(
 
 schema {
     query: Query
+    mutation: Mutation
 }
 
 type Query {
     me: Me! @juniper(ownership: "owned", async: true)
+}
+
+type Mutation {
+    authenticate: Me! @juniper(ownership: "owned", async: true)
 }
 
 interface Node {

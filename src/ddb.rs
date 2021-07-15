@@ -35,7 +35,7 @@ impl<T> Dao<T> {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialOrd, PartialEq)]
 pub enum DaoError {
     #[error("notfound")]
     NotFound,

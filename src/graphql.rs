@@ -1,6 +1,8 @@
 mod me;
+mod mutation;
 mod query;
 
+use self::mutation::*;
 use self::query::*;
 use crate::graphql::me::*;
 use juniper::*;
@@ -25,5 +27,5 @@ impl Context {
 }
 
 pub fn new_schema() -> Schema {
-    Schema::new(Query {}, EmptyMutation::new(), EmptySubscription::new())
+    Schema::new(Query {}, Mutation {}, EmptySubscription::new())
 }

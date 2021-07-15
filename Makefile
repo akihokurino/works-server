@@ -6,9 +6,6 @@ run-local:
 	cargo run
 
 build:
-	SCCACHE_CACHE_SIZE=5G \
-	SCCACHE_DIR=.cache/sccache \
-	RUSTC_WRAPPER=`which sccache` \
 	cargo build
 
 clean:

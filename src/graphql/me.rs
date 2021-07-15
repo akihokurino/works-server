@@ -1,6 +1,5 @@
 use crate::domain;
 use crate::graphql::*;
-use juniper_from_schema::{QueryTrail, Walked};
 
 #[derive(Debug, Clone)]
 pub struct Me {

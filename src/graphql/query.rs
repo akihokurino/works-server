@@ -21,9 +21,7 @@ impl QueryFields for Query {
             .clone()
             .ok_or(FieldError::from("unauthorized"))?;
 
-        let user = user_dao
-            .get(authorized_user_id)
-            .map_err(FieldError::from)?;
+        let user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
 
         Ok(Me { user })
     }

@@ -1,4 +1,5 @@
 /target
 .idea
-works-cred.prod.json
+gcp.prod.json
+firebase.prod.json
 .env

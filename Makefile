@@ -12,4 +12,4 @@ clean:
 	cargo clean
 
 proxy_db:
-	cloud_sql_proxy -credential_file=works-cred.prod.json -instances=works-prod:asia-northeast1:db=tcp:0.0.0.0:3306
+	cloud_sql_proxy -credential_file=gcp.prod.json -instances=works-prod:asia-northeast1:main=tcp:0.0.0.0:3306

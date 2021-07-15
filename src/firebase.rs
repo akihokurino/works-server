@@ -3,6 +3,7 @@ pub mod auth;
 use jsonwebtoken;
 use reqwest;
 use serde::Deserialize;
+use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use thiserror::Error;
@@ -18,7 +19,9 @@ pub struct FirebaseConfig {
 
 impl FirebaseConfig {
     pub fn new() -> FirebaseConfig {
-        let file = File::open("firebase.prod.json").expect("cannot read firebase credential");
+        let cred_path =
+            env::var("FIREBASE_CREDENTIALS").expect("should set firebase credential path");
+        let file = File::open(cred_path).expect("cannot read firebase credential");
         let reader = BufReader::new(file);
         let config: FirebaseConfig = serde_json::from_reader(reader).unwrap();
         config

@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api-container
+          image: ${API_IMAGE}
+          command: ["./main"]
+          env:
+            - name: RUST_ENV
+              value: /var/secrets/env
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/gcp/credentials.json
+            - name: FIREBASE_CREDENTIALS
+              value: /var/secrets/firebase/credentials.json
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /var/secrets/gcp
+              readOnly: true
+            - name: firebase-credentials
+              mountPath: /var/secrets/firebase
+              readOnly: true
+            - name: env
+              mountPath: /var/secrets
+              readOnly: true
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health_check
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        - name: sql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.16
+          command:
+            [
+                "/cloud_sql_proxy",
+                "-instances=works-prod:asia-northeast1:main=tcp:0.0.0.0:3306",
+                "-credential_file=/var/secrets/gcp/credentials.json",
+            ]
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /var/secrets/gcp
+              readOnly: true
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: gcp-credentials
+        - name: firebase-credentials
+          secret:
+            secretName: firebase-credentials
+        - name: env
+          secret:
+            secretName: env
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-node-port
+spec:
+  type: NodePort
+  ports:
+    - name: "http-port"
+      protocol: "TCP"
+      port: 80
+      targetPort: 3000
+  selector:
+    app: api
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: api-ip
+    ingress.gcp.kubernetes.io/pre-shared-cert: api-cert
+spec:
+  backend:
+    serviceName: api-node-port
+    servicePort: 80

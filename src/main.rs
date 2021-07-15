@@ -11,7 +11,7 @@ use crate::firebase::FirebaseError;
 use actix_web::http::StatusCode;
 use actix_web::{error, web, App, HttpRequest, HttpResponse, HttpServer, ResponseError};
 use derive_more::Error;
-use dotenv::dotenv;
+use dotenv;
 use juniper_actix::{graphql_handler, playground_handler};
 use serde::Serialize;
 use std::env;
@@ -19,7 +19,8 @@ use std::fmt;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+    let env_path = env::var("RUST_ENV").expect("should set env");
+    dotenv::from_path(&env_path).expect("cannot read env");
 
     let port = env::var("PORT").unwrap_or("8080".to_string());
 

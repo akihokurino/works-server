@@ -2,4 +2,5 @@
 .idea
 gcp.prod.json
 firebase.prod.json
-.env
+.env.local
+.env.prod

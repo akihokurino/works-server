@@ -7,15 +7,10 @@ mod graphql;
 extern crate diesel;
 
 use crate::firebase::auth;
-use crate::firebase::FirebaseError;
-use actix_web::http::StatusCode;
-use actix_web::{error, web, App, HttpRequest, HttpResponse, HttpServer, ResponseError};
-use derive_more::Error;
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
 use dotenv;
 use juniper_actix::{graphql_handler, playground_handler};
-use serde::Serialize;
 use std::env;
-use std::fmt;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -59,14 +54,9 @@ async fn graphql_route(
     schema: web::Data<graphql::Schema>,
 ) -> actix_web::Result<HttpResponse> {
     // 開発用
-    let authorized_user_id = match req.headers().get("x-user-id") {
-        Some(v) => Some(v.to_str().map_err(|e| error::ErrorBadRequest(e))?.into()),
-        None => Some(
-            auth(&req)
-                .await
-                .map_err(|e| error::ErrorBadRequest(e))?
-                .into(),
-        ),
+    let authorized_user_id: Option<String> = match req.headers().get("x-user-id") {
+        Some(v) => v.to_str().map(|id| Some(id.to_string())).unwrap_or(None),
+        None => auth(&req).await.into(),
     };
 
     if let Some(id) = authorized_user_id.clone() {
@@ -77,76 +67,25 @@ async fn graphql_route(
     graphql_handler(&schema, &context, req, payload).await
 }
 
-async fn auth(req: &HttpRequest) -> actix_web::Result<String> {
+async fn auth(req: &HttpRequest) -> Option<String> {
     let token_header: Option<String> = match req.headers().get("authorization") {
-        Some(v) => Some(v.to_str().map_err(|e| error::ErrorBadRequest(e))?.into()),
+        Some(v) => v.to_str().map(|id| Some(id.to_string())).unwrap_or(None),
         None => None,
     };
 
     if let None = token_header {
-        return Err(error::ErrorUnauthorized(AppError::UnAuthenticate));
+        return None;
     }
 
-    let token = token_header.unwrap();
+    let token = token_header.unwrap_or("".to_string());
     if token.len() < 7 {
-        return Err(error::ErrorUnauthorized(AppError::UnAuthenticate));
+        return None;
     }
 
-    auth::verify_id_token(&token[7..])
-        .await
-        .map_err(AppError::from)
-        .map(|id| Ok(id))?
-}
+    let result = auth::verify_id_token(&token[7..]).await;
 
-#[derive(Error, Debug)]
-pub enum AppError {
-    UnAuthenticate,
-    Internal,
-}
-
-impl AppError {
-    pub fn name(&self) -> String {
-        match self {
-            Self::UnAuthenticate => "認証エラーです".to_string(),
-            Self::Internal => "サーバーエラーです".to_string(),
-        }
-    }
-}
-
-impl ResponseError for AppError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            Self::UnAuthenticate => StatusCode::UNAUTHORIZED,
-            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let status_code = self.status_code();
-        let error_response = ErrorResponse {
-            code: status_code.as_u16(),
-            message: self.to_string(),
-            error: self.name(),
-        };
-        HttpResponse::build(status_code).json(error_response)
-    }
-}
-
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name())
-    }
-}
-
-#[derive(Serialize)]
-struct ErrorResponse {
-    code: u16,
-    error: String,
-    message: String,
-}
-
-impl From<FirebaseError> for AppError {
-    fn from(_e: FirebaseError) -> Self {
-        Self::Internal
+    match result {
+        Ok(id) => Some(id),
+        Err(_) => None,
     }
 }

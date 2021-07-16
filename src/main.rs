@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
     let env_path = env::var("RUST_ENV").expect("should set env");
     dotenv::from_path(&env_path).expect("cannot read env");
 
-    let port = env::var("PORT").unwrap_or("8080".to_string());
+    let port = env::var("PORT").unwrap_or("3000".to_string());
 
     println!("running server on port {}", port);
 
@@ -37,11 +37,16 @@ async fn main() -> std::io::Result<()> {
                     .route(web::get().to(graphql_route)),
             )
             .service(web::resource("/playground").route(web::get().to(playground_route)))
+            .service(web::resource("/health_check").route(web::get().to(health_check_route)))
     })
     .bind(format!("0.0.0.0:{}", port))
     .unwrap()
     .run()
     .await
+}
+
+async fn health_check_route() -> actix_web::Result<HttpResponse> {
+    Ok(HttpResponse::Ok().body("ok"))
 }
 
 async fn playground_route() -> actix_web::Result<HttpResponse> {

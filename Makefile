@@ -17,4 +17,8 @@ proxy_db:
 	cloud_sql_proxy -credential_file=gcp.prod.json -instances=works-prod:asia-northeast1:main=tcp:0.0.0.0:3306
 
 deploy:
+	ENV=prod deploy_secret.sh
 	ENV=prod deploy.sh
+
+setup_infra:
+	ENV=prod setup_infra.sh

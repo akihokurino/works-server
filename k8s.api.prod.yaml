@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       app: api
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -16,7 +18,11 @@ spec:
       containers:
         - name: api-container
           image: ${API_IMAGE}
-          command: ["./main"]
+          command: [
+              "sh",
+              "-c",
+              "/app/target/release/works-server"
+          ]
           env:
             - name: RUST_ENV
               value: /var/secrets/env
@@ -48,7 +54,7 @@ spec:
             [
                 "/cloud_sql_proxy",
                 "-instances=works-prod:asia-northeast1:main=tcp:0.0.0.0:3306",
-                "-credential_file=/var/secrets/gcp/credentials.json",
+                "-credential_file=/var/secrets/gcp/credentials.json"
             ]
           volumeMounts:
             - name: gcp-credentials
@@ -86,7 +92,6 @@ metadata:
   name: api-ingress
   annotations:
     kubernetes.io/ingress.global-static-ip-name: api-ip
-    ingress.gcp.kubernetes.io/pre-shared-cert: api-cert
 spec:
   backend:
     serviceName: api-node-port

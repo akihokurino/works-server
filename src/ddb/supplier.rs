@@ -2,6 +2,7 @@ use crate::ddb::schema::suppliers;
 use crate::ddb::user;
 use crate::ddb::{Dao, DaoError, DaoResult};
 use crate::domain;
+use crate::domain::supplier::BillingType;
 use diesel::prelude::*;
 use std::convert::TryFrom;
 
@@ -12,6 +13,8 @@ pub struct Entity {
     pub id: String,
     pub user_id: String,
     pub name: String,
+    pub billing_amount: i32,
+    pub billing_type: i32,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -24,6 +27,8 @@ impl TryFrom<Entity> for domain::supplier::Supplier {
             id: e.id,
             user_id: e.user_id,
             name: e.name,
+            billing_amount: e.billing_amount,
+            billing_type: BillingType::from(e.billing_type),
             created_at: e.created_at,
             updated_at: e.updated_at,
         })
@@ -36,6 +41,8 @@ impl From<domain::supplier::Supplier> for Entity {
             id: d.id,
             user_id: d.user_id,
             name: d.name,
+            billing_amount: d.billing_amount,
+            billing_type: d.billing_type.int(),
             created_at: d.created_at,
             updated_at: d.updated_at,
         }
@@ -81,6 +88,7 @@ impl Dao<domain::supplier::Supplier> {
         if let Err(e) = diesel::update(suppliers::table.find(e.id))
             .set((
                 suppliers::name.eq(e.name),
+                suppliers::billing_amount.eq(e.billing_amount),
                 suppliers::updated_at.eq(e.updated_at),
             ))
             .execute(&self.conn)

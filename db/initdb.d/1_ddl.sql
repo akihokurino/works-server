@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS `suppliers` (
   `id` VARCHAR(255) NOT NULL,
   `user_id` VARCHAR(255) NOT NULL,
   `name` VARCHAR(255) NOT NULL,
+  `billing_amount` INT(11) NOT NULL,
+  `billing_type` INT(11) NOT NULL,
   `created_at` DATETIME NOT NULL,
   `updated_at` DATETIME NOT NULL,
   PRIMARY KEY (`id`),

@@ -35,6 +35,8 @@ type Me implements Node {
 type Supplier implements Node {
     id: ID! @juniper(ownership: "owned")
     name: String! @juniper(ownership: "owned")
+    billingAmount: Int! @juniper(ownership: "owned")
+    billingType: SupplierBillingType! @juniper(ownership: "owned")
 }
 
 type SupplierEdge {
@@ -45,13 +47,21 @@ type SupplierConnection {
     edges: [SupplierEdge!]! @juniper(ownership: "owned", async: true)
 }
 
+enum SupplierBillingType {
+    Monthly
+    OneTime
+}
+
 input CreateSupplierInput {
     name: String!
+    billingAmount: Int!
+    billingType: SupplierBillingType!
 }
 
 input UpdateSupplierInput {
     id: String!
     name: String!
+    billingAmount: Int!
 }
 
 input DeleteSupplierInput {

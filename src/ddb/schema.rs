@@ -11,6 +11,8 @@ table! {
         id -> Varchar,
         user_id -> Varchar,
         name -> Varchar,
+        billing_amount -> Integer,
+        billing_type -> Integer,
         created_at -> Datetime,
         updated_at -> Datetime,
     }

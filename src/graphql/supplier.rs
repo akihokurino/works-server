@@ -15,6 +15,17 @@ impl SupplierFields for Supplier {
     fn field_name(&self, _: &Executor<Context>) -> FieldResult<String> {
         Ok(self.supplier.name.clone())
     }
+
+    fn field_billing_amount(&self, _: &Executor<Context>) -> FieldResult<i32> {
+        Ok(self.supplier.billing_amount_include_tax().clone())
+    }
+
+    fn field_billing_type(&self, _: &Executor<Context>) -> FieldResult<SupplierBillingType> {
+        Ok(match self.supplier.billing_type {
+            domain::supplier::BillingType::Monthly => SupplierBillingType::Monthly,
+            domain::supplier::BillingType::OneTime => SupplierBillingType::OneTime,
+        })
+    }
 }
 
 #[derive(Debug, Clone)]

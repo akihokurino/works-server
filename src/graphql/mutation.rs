@@ -64,10 +64,21 @@ impl MutationFields for Mutation {
 
         let now: DateTime<Utc> = Utc::now();
         let name = input.name;
+        let billing_amount = input.billing_amount;
+        let billing_type = match input.billing_type {
+            SupplierBillingType::Monthly => domain::supplier::BillingType::Monthly,
+            SupplierBillingType::OneTime => domain::supplier::BillingType::OneTime,
+        };
 
         let supplier = supplier_dao
             .tx(|| {
-                let supplier = domain::supplier::Supplier::new(authorized_user_id, name, now);
+                let supplier = domain::supplier::Supplier::new(
+                    authorized_user_id,
+                    name,
+                    billing_amount,
+                    billing_type,
+                    now,
+                );
                 supplier_dao.insert(&supplier)?;
                 Ok(supplier)
             })
@@ -92,6 +103,7 @@ impl MutationFields for Mutation {
         let now: DateTime<Utc> = Utc::now();
         let id = input.id;
         let name = input.name;
+        let billing_amount = input.billing_amount;
 
         let supplier = supplier_dao
             .tx(|| {
@@ -100,7 +112,7 @@ impl MutationFields for Mutation {
                     return Err(DaoError::Forbidden);
                 }
 
-                supplier.update(name, now);
+                supplier.update(name, billing_amount, now);
 
                 supplier_dao.update(&supplier)?;
                 Ok(supplier)

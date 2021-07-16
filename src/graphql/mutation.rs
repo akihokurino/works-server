@@ -1,6 +1,8 @@
 use crate::ddb;
+use crate::ddb::DaoError;
 use crate::domain;
 use crate::graphql::me::Me;
+use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
 use crate::graphql::*;
 use async_trait::async_trait;
@@ -22,6 +24,7 @@ impl MutationFields for Mutation {
             .authorized_user_id
             .clone()
             .ok_or(FieldError::from("unauthorized"))?;
+
         let now: DateTime<Utc> = Utc::now();
 
         let user = user_dao.get(authorized_user_id.clone());
@@ -44,5 +47,95 @@ impl MutationFields for Mutation {
                 Ok(Me { user })
             }
         }
+    }
+
+    async fn field_create_supplier<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, Supplier, Walked>,
+        input: CreateSupplierInput,
+    ) -> FieldResult<Supplier> {
+        let ctx = exec.context();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let now: DateTime<Utc> = Utc::now();
+        let name = input.name;
+
+        let supplier = supplier_dao
+            .tx(|| {
+                let supplier = domain::supplier::Supplier::new(authorized_user_id, name, now);
+                supplier_dao.insert(&supplier)?;
+                Ok(supplier)
+            })
+            .map_err(FieldError::from)?;
+
+        Ok(Supplier { supplier })
+    }
+
+    async fn field_update_supplier<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, Supplier, Walked>,
+        input: UpdateSupplierInput,
+    ) -> FieldResult<Supplier> {
+        let ctx = exec.context();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let now: DateTime<Utc> = Utc::now();
+        let id = input.id;
+        let name = input.name;
+
+        let supplier = supplier_dao
+            .tx(|| {
+                let mut supplier = supplier_dao.get(id.clone())?;
+                if supplier.user_id != authorized_user_id {
+                    return Err(DaoError::Forbidden);
+                }
+
+                supplier.update(name, now);
+
+                supplier_dao.update(&supplier)?;
+                Ok(supplier)
+            })
+            .map_err(FieldError::from)?;
+
+        Ok(Supplier { supplier })
+    }
+
+    async fn field_delete_supplier<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        input: DeleteSupplierInput,
+    ) -> FieldResult<bool> {
+        let ctx = exec.context();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let id = input.id;
+
+        supplier_dao
+            .tx(|| {
+                let supplier = supplier_dao.get(id.clone())?;
+                if supplier.user_id != authorized_user_id {
+                    return Err(DaoError::Forbidden);
+                }
+
+                supplier_dao.delete(supplier.id.clone())?;
+                Ok(())
+            })
+            .map_err(FieldError::from)?;
+
+        Ok(true)
     }
 }

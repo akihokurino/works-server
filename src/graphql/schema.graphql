@@ -18,6 +18,9 @@ type Query {
 
 type Mutation {
     authenticate: Me! @juniper(ownership: "owned", async: true)
+    createSupplier(input: CreateSupplierInput!): Supplier! @juniper(ownership: "owned", async: true)
+    updateSupplier(input: UpdateSupplierInput!): Supplier! @juniper(ownership: "owned", async: true)
+    deleteSupplier(input: DeleteSupplierInput!): Boolean! @juniper(ownership: "owned", async: true)
 }
 
 interface Node {
@@ -26,4 +29,31 @@ interface Node {
 
 type Me implements Node {
     id: ID! @juniper(ownership: "owned")
+    suppliers: SupplierConnection! @juniper(ownership: "owned", async: true)
+}
+
+type Supplier implements Node {
+    id: ID! @juniper(ownership: "owned")
+    name: String! @juniper(ownership: "owned")
+}
+
+type SupplierEdge {
+    node: Supplier! @juniper(ownership: "owned", async: true)
+}
+
+type SupplierConnection {
+    edges: [SupplierEdge!]! @juniper(ownership: "owned", async: true)
+}
+
+input CreateSupplierInput {
+    name: String!
+}
+
+input UpdateSupplierInput {
+    id: String!
+    name: String!
+}
+
+input DeleteSupplierInput {
+    id: String!
 }

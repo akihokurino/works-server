@@ -92,7 +92,12 @@ metadata:
   name: api-ingress
   annotations:
     kubernetes.io/ingress.global-static-ip-name: api-ip
+    ingress.gcp.kubernetes.io/pre-shared-cert: api-cert
 spec:
-  backend:
-    serviceName: api-node-port
-    servicePort: 80
+  rules:
+    - host: works-api.akiho.app
+      http:
+        paths:
+          - backend:
+              serviceName: api-node-port
+              servicePort: 80

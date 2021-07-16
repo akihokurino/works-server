@@ -29,6 +29,9 @@ gcloud compute addresses create works-server \
   --region=${REGION}
 gcloud compute addresses create api-ip --global
 
+echo -e "\n\033[1;32m----- 証明書作成 -----\033[0;39m"
+gcloud beta compute ssl-certificates create api-cert --domains works-api.akiho.app
+
 echo -e "\n\033[1;32m----- Router作成 -----\033[0;39m"
 gcloud compute routers create works-server \
   --region=${REGION} \

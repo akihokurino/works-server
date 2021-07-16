@@ -1,4 +1,5 @@
 mod schema;
+mod supplier;
 pub mod user;
 
 use std::env;
@@ -39,6 +40,8 @@ impl<T> Dao<T> {
 pub enum DaoError {
     #[error("notfound")]
     NotFound,
+    #[error("forbidden")]
+    Forbidden,
     #[error("internal error: {0}")]
     Internal(String),
 }

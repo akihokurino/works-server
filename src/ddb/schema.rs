@@ -6,4 +6,16 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(users,);
+table! {
+    suppliers (id) {
+        id -> Varchar,
+        user_id -> Varchar,
+        name -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+
+joinable!(suppliers -> users (user_id));
+
+allow_tables_to_appear_in_same_query!(users, suppliers,);

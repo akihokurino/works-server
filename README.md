@@ -1,0 +1,21 @@
+# works-server
+
+請求書管理システム
+
+## Misoca API
+
+```
+https://app.misoca.jp/oauth2/authorize?client_id=jGKRHV2hW_t4kn0w4Ma1Jxo_XkZxUA37rqFPRiYT61k&redirect_uri=https://works-prod.web.app&response_type=code&scope=write
+
+curl --location --request POST 'https://app.misoca.jp/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+    "client_id": "jGKRHV2hW_t4kn0w4Ma1Jxo_XkZxUA37rqFPRiYT61k",
+    "client_secret": "",
+    "redirect_uri": "https://works-prod.web.app",
+    "grant_type": "authorization_code",
+    "code": ""
+}'
+```
+
+

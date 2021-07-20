@@ -3,6 +3,7 @@ USE `works`;
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` VARCHAR(255) NOT NULL,
+  `misoca_refresh_token` VARCHAR(255) NOT NULL,
   `created_at` DATETIME NOT NULL,
   `updated_at` DATETIME NOT NULL,
   PRIMARY KEY (`id`))

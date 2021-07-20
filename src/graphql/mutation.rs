@@ -5,6 +5,7 @@ use crate::graphql::me::Me;
 use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
 use crate::graphql::*;
+use crate::misoca::misoca_get_refresh_token;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use juniper::{Executor, FieldResult};
@@ -145,6 +146,42 @@ impl MutationFields for Mutation {
 
                 supplier_dao.delete(supplier.id.clone())?;
                 Ok(())
+            })
+            .map_err(FieldError::from)?;
+
+        Ok(true)
+    }
+
+    async fn field_connect_misoca<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        input: ConnectMisocaInput,
+    ) -> FieldResult<bool> {
+        let ctx = exec.context();
+        let user_dao = ctx.ddb_dao::<domain::user::User>();
+        let misoca_cli = &ctx.misoca_cli;
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let now: DateTime<Utc> = Utc::now();
+        let code = input.code;
+
+        let output = misoca_cli
+            .get_refresh_token(misoca_get_refresh_token::Input { code })
+            .await
+            .map_err(FieldError::from)?;
+
+        user_dao
+            .tx(|| {
+                let mut user = user_dao.get(authorized_user_id)?;
+
+                user.update_misoca_refresh_token(output.refresh_token, now);
+
+                user_dao.update(&user)?;
+
+                Ok(user)
             })
             .map_err(FieldError::from)?;
 

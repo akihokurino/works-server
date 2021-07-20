@@ -7,6 +7,7 @@ use self::mutation::*;
 use self::query::*;
 use crate::graphql::me::*;
 use crate::graphql::supplier::*;
+use crate::misoca;
 use juniper::*;
 use juniper_from_schema::graphql_schema_from_file;
 
@@ -17,6 +18,7 @@ graphql_schema_from_file!("src/graphql/schema.graphql", context_type: Context);
 
 pub struct Context {
     pub authorized_user_id: Option<String>,
+    pub misoca_cli: misoca::Client,
 }
 
 impl juniper::Context for Context {}

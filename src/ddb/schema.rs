@@ -1,6 +1,7 @@
 table! {
     users (id) {
         id -> Varchar,
+        misoca_refresh_token -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
     }

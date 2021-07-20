@@ -21,6 +21,7 @@ type Mutation {
     createSupplier(input: CreateSupplierInput!): Supplier! @juniper(ownership: "owned", async: true)
     updateSupplier(input: UpdateSupplierInput!): Supplier! @juniper(ownership: "owned", async: true)
     deleteSupplier(input: DeleteSupplierInput!): Boolean! @juniper(ownership: "owned", async: true)
+    connectMisoca(input: ConnectMisocaInput!): Boolean! @juniper(ownership: "owned", async: true)
 }
 
 interface Node {
@@ -67,4 +68,8 @@ input UpdateSupplierInput {
 
 input DeleteSupplierInput {
     id: String!
+}
+
+input ConnectMisocaInput {
+    code: String!
 }

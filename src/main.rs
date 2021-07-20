@@ -2,6 +2,7 @@ mod ddb;
 mod domain;
 mod firebase;
 mod graphql;
+mod misoca;
 
 #[macro_use]
 extern crate diesel;
@@ -23,9 +24,15 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         let schema = graphql::new_schema();
+        let misoca_cli = misoca::Client::new(
+            env::var("MISOCA_CLIENT_ID").unwrap(),
+            env::var("MISOCA_SECRET").unwrap(),
+            env::var("MISOCA_REDIRECT_URL").unwrap(),
+        );
 
         App::new()
             .data(schema)
+            .data(misoca_cli)
             .service(
                 web::resource("/graphql")
                     .route(web::post().to(graphql_route))
@@ -52,6 +59,7 @@ async fn graphql_route(
     req: HttpRequest,
     payload: web::Payload,
     schema: web::Data<graphql::Schema>,
+    misoca_cli: web::Data<misoca::Client>,
 ) -> actix_web::Result<HttpResponse> {
     // 開発用
     let authorized_user_id: Option<String> = match req.headers().get("x-user-id") {
@@ -63,7 +71,10 @@ async fn graphql_route(
         println!("login user id: {}", id);
     }
 
-    let context = graphql::Context { authorized_user_id };
+    let context = graphql::Context {
+        authorized_user_id,
+        misoca_cli: misoca_cli.get_ref().clone(),
+    };
     graphql_handler(&schema, &context, req, payload).await
 }
 

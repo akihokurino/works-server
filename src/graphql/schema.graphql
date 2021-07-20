@@ -35,7 +35,8 @@ type Me implements Node {
 type Supplier implements Node {
     id: ID! @juniper(ownership: "owned")
     name: String! @juniper(ownership: "owned")
-    billingAmount: Int! @juniper(ownership: "owned")
+    billingAmountIncludeTax: Int! @juniper(ownership: "owned")
+    billingAmountExcludeTax: Int! @juniper(ownership: "owned")
     billingType: SupplierBillingType! @juniper(ownership: "owned")
 }
 

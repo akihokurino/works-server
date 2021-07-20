@@ -16,8 +16,12 @@ impl SupplierFields for Supplier {
         Ok(self.supplier.name.clone())
     }
 
-    fn field_billing_amount(&self, _: &Executor<Context>) -> FieldResult<i32> {
+    fn field_billing_amount_include_tax(&self, _: &Executor<Context>) -> FieldResult<i32> {
         Ok(self.supplier.billing_amount_include_tax().clone())
+    }
+
+    fn field_billing_amount_exclude_tax(&self, _: &Executor<Context>) -> FieldResult<i32> {
+        Ok(self.supplier.billing_amount.clone())
     }
 
     fn field_billing_type(&self, _: &Executor<Context>) -> FieldResult<SupplierBillingType> {

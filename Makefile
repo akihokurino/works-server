@@ -22,3 +22,6 @@ deploy:
 
 setup_infra:
 	ENV=prod setup_infra.sh
+
+deploy_oauth_callback:
+	cd oauth/callback && firebase use production && firebase deploy

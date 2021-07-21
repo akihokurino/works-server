@@ -16,6 +16,20 @@ curl --location --request POST 'https://app.misoca.jp/oauth2/token' \
     "grant_type": "authorization_code",
     "code": ""
 }'
+
+curl --location --request POST 'https://app.misoca.jp/oauth2/token' \
+--header 'Content-Type: application/json' \
+--data '{
+    "client_id": "jGKRHV2hW_t4kn0w4Ma1Jxo_XkZxUA37rqFPRiYT61k",
+    "client_secret": "",
+    "redirect_uri": "https://works-prod.web.app",
+    "grant_type": "refresh_token",
+    "refresh_token": "MGFqzUdlBRWl-WmyfevZcctHiSTkT-SAmlQty4EUBLs"
+}'
+
+curl --location --request GET 'https://app.misoca.jp/api/v3/invoices' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: bearer '
 ```
 
 

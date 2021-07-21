@@ -5,7 +5,7 @@ use crate::graphql::me::Me;
 use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
 use crate::graphql::*;
-use crate::misoca::misoca_get_refresh_token;
+use crate::misoca;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use juniper::{Executor, FieldResult};
@@ -168,22 +168,91 @@ impl MutationFields for Mutation {
         let now: DateTime<Utc> = Utc::now();
         let code = input.code;
 
-        let output = misoca_cli
-            .get_refresh_token(misoca_get_refresh_token::Input { code })
+        let tokens = misoca_cli
+            .get_tokens(misoca::get_tokens::Input { code })
             .await
             .map_err(FieldError::from)?;
+
+        let access_token = tokens.access_token;
+        let refresh_token = tokens.refresh_token;
 
         user_dao
             .tx(|| {
                 let mut user = user_dao.get(authorized_user_id)?;
 
-                user.update_misoca_refresh_token(output.refresh_token, now);
+                user.update_misoca_refresh_token(refresh_token, now);
 
                 user_dao.update(&user)?;
 
                 Ok(user)
             })
             .map_err(FieldError::from)?;
+
+        let invoices = misoca_cli
+            .get_invoices(misoca::get_invoices::Input {
+                access_token,
+                supplier_name: "Zidai株式会社".to_string(),
+                page: 1,
+                per_page: 10,
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        for invoice in invoices {
+            println!("{:?}", invoice.subject)
+        }
+
+        Ok(true)
+    }
+
+    async fn field_refresh_misoca<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+    ) -> FieldResult<bool> {
+        let ctx = exec.context();
+        let user_dao = ctx.ddb_dao::<domain::user::User>();
+        let misoca_cli = &ctx.misoca_cli;
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let now: DateTime<Utc> = Utc::now();
+
+        let mut user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
+
+        let tokens = misoca_cli
+            .refresh_tokens(misoca::refresh_tokens::Input {
+                refresh_token: user.misoca_refresh_token.clone(),
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        let access_token = tokens.access_token;
+        let refresh_token = tokens.refresh_token;
+
+        user.update_misoca_refresh_token(refresh_token, now);
+
+        user_dao
+            .tx(|| {
+                user_dao.update(&user)?;
+                Ok(())
+            })
+            .map_err(FieldError::from)?;
+
+        let invoices = misoca_cli
+            .get_invoices(misoca::get_invoices::Input {
+                access_token,
+                supplier_name: "Zidai株式会社".to_string(),
+                page: 1,
+                per_page: 10,
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        for invoice in invoices {
+            println!("{:?}", invoice.subject)
+        }
 
         Ok(true)
     }

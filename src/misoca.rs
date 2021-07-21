@@ -21,16 +21,26 @@ impl Client {
         }
     }
 
-    async fn call(&self, input: CallInput) -> MisocaResult<Response> {
+    async fn call(&self, input: CallInput, token: String) -> MisocaResult<Response> {
         let mut url = self.service_base_url.clone();
         url.set_path(format!("{}", input.path).as_str());
+        for q in input.query {
+            url.set_query(Some(q.as_str()))
+        }
         println!("call api: {}", url.to_string());
         let mut req = reqwest::Request::new(input.method, url);
+
         let mut headers = HeaderMap::new();
         headers.insert(
             "Content-Type",
             HeaderValue::from_str("application/json").unwrap(),
         );
+        if !token.is_empty() {
+            headers.insert(
+                "Authorization",
+                HeaderValue::from_str(&format!("bearer {}", token)).unwrap(),
+            );
+        }
         *req.headers_mut() = headers;
         *req.body_mut() = input.body;
 
@@ -39,22 +49,12 @@ impl Client {
             println!("error: {}", e.to_string());
             MisocaError::from(e)
         })?;
-
-        // let for_debug = &resp;
-        // let body = for_debug.text().await;
-        // if let Ok(body) = body {
-        //     println!("response: {}", body)
-        // }
-
         Ok(resp)
     }
 
-    pub async fn get_refresh_token(
-        &self,
-        input: misoca_get_refresh_token::Input,
-    ) -> MisocaResult<misoca_get_refresh_token::Output> {
+    pub async fn get_tokens(&self, input: get_tokens::Input) -> MisocaResult<get_tokens::Output> {
         #[derive(Debug, Serialize)]
-        struct Input {
+        struct Body {
             pub client_id: String,
             pub client_secret: String,
             pub redirect_uri: String,
@@ -62,7 +62,7 @@ impl Client {
             pub code: String,
         }
 
-        let _input = Input {
+        let body = Body {
             client_id: self.client_id.clone(),
             client_secret: self.secret.clone(),
             redirect_uri: self.redirect_uri.clone(),
@@ -70,36 +70,174 @@ impl Client {
             code: input.code.clone(),
         };
 
-        println!("json body: {}", serde_json::to_string(&_input).unwrap());
+        println!("json body: {}", serde_json::to_string(&body).unwrap());
 
-        self.call(CallInput {
-            method: Method::POST,
-            path: "/oauth2/token".to_string(),
-            body: Some(
-                serde_json::to_string(&_input)
-                    .map_err(|e| MisocaError::Internal(e.to_string()))?
-                    .into(),
-            ),
-        })
+        let query = vec![];
+
+        self.call(
+            CallInput {
+                method: Method::POST,
+                path: "/oauth2/token".to_string(),
+                body: Some(
+                    serde_json::to_string(&body)
+                        .map_err(|e| MisocaError::Internal(e.to_string()))?
+                        .into(),
+                ),
+                query,
+            },
+            "".to_string(),
+        )
         .await?
         .error_for_status()?
-        .json::<misoca_get_refresh_token::Output>()
+        .json::<get_tokens::Output>()
+        .await
+        .map_err(MisocaError::from)
+    }
+
+    pub async fn refresh_tokens(
+        &self,
+        input: refresh_tokens::Input,
+    ) -> MisocaResult<refresh_tokens::Output> {
+        #[derive(Debug, Serialize)]
+        struct Body {
+            pub client_id: String,
+            pub client_secret: String,
+            pub redirect_uri: String,
+            pub grant_type: String,
+            pub refresh_token: String,
+        }
+
+        let body = Body {
+            client_id: self.client_id.clone(),
+            client_secret: self.secret.clone(),
+            redirect_uri: self.redirect_uri.clone(),
+            grant_type: "refresh_token".to_string(),
+            refresh_token: input.refresh_token,
+        };
+
+        println!("json body: {}", serde_json::to_string(&body).unwrap());
+
+        let query = vec![];
+
+        self.call(
+            CallInput {
+                method: Method::POST,
+                path: "/oauth2/token".to_string(),
+                body: Some(
+                    serde_json::to_string(&body)
+                        .map_err(|e| MisocaError::Internal(e.to_string()))?
+                        .into(),
+                ),
+                query,
+            },
+            "".to_string(),
+        )
+        .await?
+        .error_for_status()?
+        .json::<refresh_tokens::Output>()
+        .await
+        .map_err(MisocaError::from)
+    }
+
+    pub async fn get_invoices(
+        &self,
+        input: get_invoices::Input,
+    ) -> MisocaResult<get_invoices::Output> {
+        #[derive(Debug, Serialize)]
+        struct Body {}
+
+        let body = Body {};
+
+        println!("json body: {}", serde_json::to_string(&body).unwrap());
+
+        let query = vec![
+            format!("condition={}", input.supplier_name),
+            format!("page={}", input.page),
+            format!("per_page={}", input.per_page),
+        ];
+
+        self.call(
+            CallInput {
+                method: Method::GET,
+                path: "/api/v3/invoices".to_string(),
+                body: Some(
+                    serde_json::to_string(&body)
+                        .map_err(|e| MisocaError::Internal(e.to_string()))?
+                        .into(),
+                ),
+                query,
+            },
+            input.access_token,
+        )
+        .await?
+        .error_for_status()?
+        .json::<get_invoices::Output>()
         .await
         .map_err(MisocaError::from)
     }
 }
 
-pub mod misoca_get_refresh_token {
+pub mod get_tokens {
     use super::*;
 
     #[derive(Debug, Serialize)]
     pub struct Input {
         pub code: String,
     }
+
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Output {
+        pub access_token: String,
         pub refresh_token: String,
     }
+}
+
+pub mod refresh_tokens {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub refresh_token: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Output {
+        pub access_token: String,
+        pub refresh_token: String,
+    }
+}
+
+pub mod get_invoices {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub supplier_name: String,
+        pub page: i32,
+        pub per_page: i32,
+    }
+
+    pub type Output = Vec<Invoice>;
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Invoice {
+    pub id: Option<i32>,
+    pub issue_date: Option<String>,
+    pub payment_due_on: Option<String>,
+    pub invoice_number: Option<String>,
+    pub payment_status: Option<i32>,
+    pub invoice_status: Option<i32>,
+    pub recipient_name: String,
+    pub subject: Option<String>,
+    pub body: Option<InvoiceBody>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InvoiceBody {
+    pub total_amount: Option<String>,
+    pub tax: Option<String>,
 }
 
 #[derive(Default)]
@@ -107,6 +245,7 @@ pub struct CallInput {
     pub method: Method,
     pub path: String,
     pub body: Option<Body>,
+    pub query: Vec<String>,
 }
 
 #[derive(ThisErr, Debug)]

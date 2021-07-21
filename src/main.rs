@@ -3,6 +3,7 @@ mod domain;
 mod firebase;
 mod graphql;
 mod misoca;
+mod util;
 
 #[macro_use]
 extern crate diesel;

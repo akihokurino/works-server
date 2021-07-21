@@ -1,6 +1,10 @@
+use crate::domain;
+use crate::domain::YMD;
+use crate::util;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Body, Method, Response, Url};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use thiserror::Error as ThisErr;
 
 #[derive(Clone)]
@@ -25,9 +29,11 @@ impl Client {
         let mut url = self.service_base_url.clone();
         url.set_path(format!("{}", input.path).as_str());
         for q in input.query {
-            url.set_query(Some(q.as_str()))
+            url.query_pairs_mut()
+                .append_pair(q.0.as_str(), q.1.as_str());
         }
         println!("call api: {}", url.to_string());
+
         let mut req = reqwest::Request::new(input.method, url);
 
         let mut headers = HeaderMap::new();
@@ -42,6 +48,7 @@ impl Client {
             );
         }
         *req.headers_mut() = headers;
+
         *req.body_mut() = input.body;
 
         let cli = reqwest::Client::new();
@@ -49,6 +56,7 @@ impl Client {
             println!("error: {}", e.to_string());
             MisocaError::from(e)
         })?;
+
         Ok(resp)
     }
 
@@ -142,7 +150,8 @@ impl Client {
     pub async fn get_invoices(
         &self,
         input: get_invoices::Input,
-    ) -> MisocaResult<get_invoices::Output> {
+        supplier: &domain::supplier::Supplier,
+    ) -> MisocaResult<Vec<domain::invoice::Invoice>> {
         #[derive(Debug, Serialize)]
         struct Body {}
 
@@ -151,9 +160,9 @@ impl Client {
         println!("json body: {}", serde_json::to_string(&body).unwrap());
 
         let query = vec![
-            format!("condition={}", input.supplier_name),
-            format!("page={}", input.page),
-            format!("per_page={}", input.per_page),
+            ("page".to_string(), input.page.to_string()),
+            ("per_page".to_string(), input.per_page.to_string()),
+            ("condition".to_string(), supplier.name.to_string()),
         ];
 
         self.call(
@@ -174,6 +183,11 @@ impl Client {
         .json::<get_invoices::Output>()
         .await
         .map_err(MisocaError::from)
+        .map(|item| {
+            item.into_iter()
+                .map(|v| v.to_domain(supplier).unwrap())
+                .collect::<Vec<_>>()
+        })
     }
 }
 
@@ -213,7 +227,6 @@ pub mod get_invoices {
     #[derive(Debug, Serialize)]
     pub struct Input {
         pub access_token: String,
-        pub supplier_name: String,
         pub page: i32,
         pub per_page: i32,
     }
@@ -229,9 +242,11 @@ pub struct Invoice {
     pub invoice_number: Option<String>,
     pub payment_status: Option<i32>,
     pub invoice_status: Option<i32>,
-    pub recipient_name: String,
+    pub recipient_name: Option<String>,
     pub subject: Option<String>,
     pub body: Option<InvoiceBody>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -240,12 +255,67 @@ pub struct InvoiceBody {
     pub tax: Option<String>,
 }
 
+impl Invoice {
+    fn to_domain(
+        &self,
+        supplier: &domain::supplier::Supplier,
+    ) -> MisocaResult<domain::invoice::Invoice> {
+        let body = self.body.as_ref().unwrap();
+
+        let total_amount: f64 = body
+            .total_amount
+            .clone()
+            .unwrap_or("0".to_string())
+            .parse()
+            .unwrap();
+        let tax: f64 = body.tax.clone().unwrap_or("0".to_string()).parse().unwrap();
+
+        let issue_ymd =
+            YMD::from_str(self.issue_date.clone().unwrap_or("".to_string()).as_str())
+                .map_err(|_e| MisocaError::Internal("cannot parse issue_date".to_string()))?;
+        let payment_due_on_ymd = YMD::from_str(
+            self.payment_due_on
+                .clone()
+                .unwrap_or("".to_string())
+                .as_str(),
+        )
+        .map_err(|_e| MisocaError::Internal("cannot parse payment_due_on".to_string()))?;
+
+        let created_at =
+            chrono::DateTime::parse_from_rfc3339(self.created_at.clone().unwrap().as_str())
+                .map_err(|_e| MisocaError::Internal("cannot parse created_at".to_string()))?;
+        let updated_at =
+            chrono::DateTime::parse_from_rfc3339(self.updated_at.clone().unwrap().as_str())
+                .map_err(|_e| MisocaError::Internal("cannot parse updated_at".to_string()))?;
+
+        Ok(domain::invoice::Invoice {
+            id: String::from(self.id.unwrap().to_string()),
+            supplier_id: supplier.id.clone(),
+            issue_ymd,
+            payment_due_on_ymd,
+            invoice_number: self.invoice_number.clone().unwrap_or("".to_string()),
+            payment_status: domain::invoice::PaymentStatus::from(
+                self.payment_status.clone().unwrap_or(0),
+            ),
+            invoice_status: domain::invoice::InvoiceStatus::from(
+                self.invoice_status.clone().unwrap_or(0),
+            ),
+            recipient_name: self.recipient_name.clone().unwrap_or("".to_string()),
+            subject: self.subject.clone().unwrap_or("".to_string()),
+            total_amount: util::f64_to_i32(total_amount),
+            tax: util::f64_to_i32(tax),
+            created_at: created_at.naive_utc(),
+            updated_at: updated_at.naive_utc(),
+        })
+    }
+}
+
 #[derive(Default)]
 pub struct CallInput {
     pub method: Method,
     pub path: String,
     pub body: Option<Body>,
-    pub query: Vec<String>,
+    pub query: Vec<(String, String)>,
 }
 
 #[derive(ThisErr, Debug)]

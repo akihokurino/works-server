@@ -159,6 +159,8 @@ impl MutationFields for Mutation {
     ) -> FieldResult<bool> {
         let ctx = exec.context();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
             .authorized_user_id
@@ -168,6 +170,8 @@ impl MutationFields for Mutation {
         let now: DateTime<Utc> = Utc::now();
         let code = input.code;
 
+        let mut user = user_dao.get(authorized_user_id)?;
+
         let tokens = misoca_cli
             .get_tokens(misoca::get_tokens::Input { code })
             .await
@@ -176,30 +180,40 @@ impl MutationFields for Mutation {
         let access_token = tokens.access_token;
         let refresh_token = tokens.refresh_token;
 
+        user.update_misoca_refresh_token(refresh_token, now);
+
         user_dao
             .tx(|| {
-                let mut user = user_dao.get(authorized_user_id)?;
-
-                user.update_misoca_refresh_token(refresh_token, now);
-
                 user_dao.update(&user)?;
-
-                Ok(user)
+                Ok(())
             })
             .map_err(FieldError::from)?;
 
-        let invoices = misoca_cli
-            .get_invoices(misoca::get_invoices::Input {
-                access_token,
-                supplier_name: "Zidai株式会社".to_string(),
-                page: 1,
-                per_page: 10,
-            })
-            .await
+        let suppliers = supplier_dao
+            .get_all_by_user(user.id.clone())
             .map_err(FieldError::from)?;
 
-        for invoice in invoices {
-            println!("{:?}", invoice.subject)
+        for supplier in suppliers {
+            let invoices = misoca_cli
+                .get_invoices(
+                    misoca::get_invoices::Input {
+                        access_token: access_token.clone(),
+                        page: 1,
+                        per_page: 100,
+                    },
+                    &supplier,
+                )
+                .await
+                .map_err(FieldError::from)?;
+
+            invoice_dao
+                .tx(|| {
+                    for invoice in invoices {
+                        invoice_dao.insert(&invoice)?;
+                    }
+                    Ok(())
+                })
+                .map_err(FieldError::from)?;
         }
 
         Ok(true)
@@ -211,6 +225,8 @@ impl MutationFields for Mutation {
     ) -> FieldResult<bool> {
         let ctx = exec.context();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
             .authorized_user_id
@@ -220,6 +236,10 @@ impl MutationFields for Mutation {
         let now: DateTime<Utc> = Utc::now();
 
         let mut user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
+
+        if user.misoca_refresh_token.is_empty() {
+            return Err(FieldError::from("you should connect misoca"));
+        }
 
         let tokens = misoca_cli
             .refresh_tokens(misoca::refresh_tokens::Input {
@@ -240,18 +260,31 @@ impl MutationFields for Mutation {
             })
             .map_err(FieldError::from)?;
 
-        let invoices = misoca_cli
-            .get_invoices(misoca::get_invoices::Input {
-                access_token,
-                supplier_name: "Zidai株式会社".to_string(),
-                page: 1,
-                per_page: 10,
-            })
-            .await
+        let suppliers = supplier_dao
+            .get_all_by_user(user.id.clone())
             .map_err(FieldError::from)?;
 
-        for invoice in invoices {
-            println!("{:?}", invoice.subject)
+        for supplier in suppliers {
+            let invoices = misoca_cli
+                .get_invoices(
+                    misoca::get_invoices::Input {
+                        access_token: access_token.clone(),
+                        page: 1,
+                        per_page: 100,
+                    },
+                    &supplier,
+                )
+                .await
+                .map_err(FieldError::from)?;
+
+            invoice_dao
+                .tx(|| {
+                    for invoice in invoices {
+                        invoice_dao.insert(&invoice)?;
+                    }
+                    Ok(())
+                })
+                .map_err(FieldError::from)?;
         }
 
         Ok(true)

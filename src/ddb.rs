@@ -1,5 +1,6 @@
+pub mod invoice;
 mod schema;
-mod supplier;
+pub mod supplier;
 pub mod user;
 
 use std::env;

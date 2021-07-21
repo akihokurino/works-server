@@ -2,7 +2,6 @@ use crate::ddb::schema::suppliers;
 use crate::ddb::user;
 use crate::ddb::{Dao, DaoError, DaoResult};
 use crate::domain;
-use crate::domain::supplier::BillingType;
 use diesel::prelude::*;
 use std::convert::TryFrom;
 
@@ -28,7 +27,7 @@ impl TryFrom<Entity> for domain::supplier::Supplier {
             user_id: e.user_id,
             name: e.name,
             billing_amount: e.billing_amount,
-            billing_type: BillingType::from(e.billing_type),
+            billing_type: domain::supplier::BillingType::from(e.billing_type),
             created_at: e.created_at,
             updated_at: e.updated_at,
         })

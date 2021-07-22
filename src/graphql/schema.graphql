@@ -14,6 +14,7 @@ schema {
 
 type Query {
     me: Me! @juniper(ownership: "owned", async: true)
+    getInvoiceList(input: GetInvoiceListInput!): InvoiceConnection! @juniper(ownership: "owned", async: true)
 }
 
 type Mutation {
@@ -39,7 +40,7 @@ type Supplier implements Node {
     name: String! @juniper(ownership: "owned")
     billingAmountIncludeTax: Int! @juniper(ownership: "owned")
     billingAmountExcludeTax: Int! @juniper(ownership: "owned")
-    billingType: SupplierBillingType! @juniper(ownership: "owned")
+    billingType: GraphQLBillingType! @juniper(ownership: "owned")
 }
 
 type SupplierEdge {
@@ -50,15 +51,46 @@ type SupplierConnection {
     edges: [SupplierEdge!]! @juniper(ownership: "owned", async: true)
 }
 
-enum SupplierBillingType {
+type Invoice implements Node {
+    id: ID! @juniper(ownership: "owned")
+    issueYMD: String! @juniper(ownership: "owned")
+    paymentDueOnYMD: String! @juniper(ownership: "owned")
+    invoiceNumber: String! @juniper(ownership: "owned")
+    paymentStatus: GraphQLPaymentStatus! @juniper(ownership: "owned")
+    invoiceStatus: GraphQLInvoiceStatus! @juniper(ownership: "owned")
+    recipientName: String! @juniper(ownership: "owned")
+    subject: String! @juniper(ownership: "owned")
+    totalAmount: Int! @juniper(ownership: "owned")
+    tax: Int! @juniper(ownership: "owned")
+}
+
+type InvoiceEdge {
+    node: Invoice! @juniper(ownership: "owned", async: true)
+}
+
+type InvoiceConnection {
+    edges: [InvoiceEdge!]! @juniper(ownership: "owned", async: true)
+}
+
+enum GraphQLBillingType {
     Monthly
     OneTime
+}
+
+enum GraphQLPaymentStatus {
+    UnPaid
+    Paid
+}
+
+enum GraphQLInvoiceStatus {
+    UnSubmitted
+    Submitted
 }
 
 input CreateSupplierInput {
     name: String!
     billingAmount: Int!
-    billingType: SupplierBillingType!
+    billingType: GraphQLBillingType!
 }
 
 input UpdateSupplierInput {
@@ -73,4 +105,8 @@ input DeleteSupplierInput {
 
 input ConnectMisocaInput {
     code: String!
+}
+
+input GetInvoiceListInput {
+    supplierId: String!
 }

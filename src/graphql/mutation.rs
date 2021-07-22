@@ -67,8 +67,8 @@ impl MutationFields for Mutation {
         let name = input.name;
         let billing_amount = input.billing_amount;
         let billing_type = match input.billing_type {
-            SupplierBillingType::Monthly => domain::supplier::BillingType::Monthly,
-            SupplierBillingType::OneTime => domain::supplier::BillingType::OneTime,
+            GraphQLBillingType::Monthly => domain::supplier::BillingType::Monthly,
+            GraphQLBillingType::OneTime => domain::supplier::BillingType::OneTime,
         };
 
         let supplier = supplier_dao

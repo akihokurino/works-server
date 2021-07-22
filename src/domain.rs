@@ -51,14 +51,19 @@ impl YMD {
         self.year == 0 || self.month == 0 || self.day == 0
     }
 
-    pub fn to_date(&self) -> Option<chrono::NaiveDate> {
+    pub fn to_datetime(&self) -> Option<chrono::NaiveDateTime> {
         if self.is_empty() {
             return None;
         }
-        Some(chrono::NaiveDate::from_ymd(
-            self.year as i32,
-            self.month,
-            self.day,
-        ))
+
+        let result = chrono::NaiveDateTime::parse_from_str(
+            format!("{} 09:00:00", self.to_string()).as_str(),
+            "%Y-%m-%d %H:%M:%S",
+        );
+
+        match result {
+            Ok(datetime) => Some(datetime),
+            Err(_) => None,
+        }
     }
 }

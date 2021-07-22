@@ -6,16 +6,18 @@ use diesel::prelude::*;
 use std::convert::TryFrom;
 use std::str::FromStr;
 
-#[derive(Queryable, Insertable, Debug, Clone, Eq, PartialEq, Identifiable, Associations)]
+#[derive(
+    Queryable, Insertable, Debug, Clone, Eq, PartialEq, Identifiable, Associations, AsChangeset,
+)]
 #[belongs_to(supplier::Entity, foreign_key = "supplier_id")]
 #[table_name = "invoices"]
 pub struct Entity {
     pub id: String,
     pub supplier_id: String,
     pub issue_ymd: String,
-    pub issue_at: Option<chrono::NaiveDate>,
+    pub issue_at: Option<chrono::NaiveDateTime>,
     pub payment_due_on_ymd: String,
-    pub payment_due_on_at: Option<chrono::NaiveDate>,
+    pub payment_due_on_at: Option<chrono::NaiveDateTime>,
     pub invoice_number: String,
     pub payment_status: i32,
     pub invoice_status: i32,
@@ -57,9 +59,9 @@ impl From<domain::invoice::Invoice> for Entity {
             id: d.id,
             supplier_id: d.supplier_id,
             issue_ymd: d.issue_ymd.to_string(),
-            issue_at: d.issue_ymd.to_date(),
+            issue_at: d.issue_ymd.to_datetime(),
             payment_due_on_ymd: d.payment_due_on_ymd.to_string(),
-            payment_due_on_at: d.payment_due_on_ymd.to_date(),
+            payment_due_on_at: d.payment_due_on_ymd.to_datetime(),
             invoice_number: d.invoice_number,
             payment_status: d.payment_status.int(),
             invoice_status: d.invoice_status.int(),
@@ -74,10 +76,46 @@ impl From<domain::invoice::Invoice> for Entity {
 }
 
 impl Dao<domain::invoice::Invoice> {
+    pub fn get_all_by_supplier(
+        &self,
+        supplier_id: String,
+    ) -> DaoResult<Vec<domain::invoice::Invoice>> {
+        return invoices::table
+            .filter(invoices::supplier_id.eq(supplier_id))
+            .order(invoices::issue_at.desc())
+            .load::<Entity>(&self.conn)
+            .map(|v: Vec<Entity>| {
+                v.into_iter()
+                    .map(|v| domain::invoice::Invoice::try_from(v).unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .map_err(DaoError::from);
+    }
+
+    pub fn get(&self, id: String) -> DaoResult<domain::invoice::Invoice> {
+        invoices::table
+            .find(id)
+            .first(&self.conn)
+            .map(|v: Entity| domain::invoice::Invoice::try_from(v).unwrap())
+            .map_err(DaoError::from)
+    }
+
     pub fn insert(&self, item: &domain::invoice::Invoice) -> DaoResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(invoices::table)
             .values(e)
+            .execute(&self.conn)
+            .map_err(DaoError::from)
+        {
+            return Err(e);
+        }
+        Ok(())
+    }
+
+    pub fn update(&self, item: &domain::invoice::Invoice) -> DaoResult<()> {
+        let e: Entity = item.clone().into();
+        if let Err(e) = diesel::update(invoices::table.find(e.id.clone()))
+            .set(&e)
             .execute(&self.conn)
             .map_err(DaoError::from)
         {

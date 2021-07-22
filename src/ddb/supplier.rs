@@ -5,7 +5,9 @@ use crate::domain;
 use diesel::prelude::*;
 use std::convert::TryFrom;
 
-#[derive(Queryable, Insertable, Debug, Clone, Eq, PartialEq, Identifiable, Associations)]
+#[derive(
+    Queryable, Insertable, Debug, Clone, Eq, PartialEq, Identifiable, Associations, AsChangeset,
+)]
 #[belongs_to(user::Entity, foreign_key = "user_id")]
 #[table_name = "suppliers"]
 pub struct Entity {
@@ -84,12 +86,8 @@ impl Dao<domain::supplier::Supplier> {
 
     pub fn update(&self, item: &domain::supplier::Supplier) -> DaoResult<()> {
         let e: Entity = item.clone().into();
-        if let Err(e) = diesel::update(suppliers::table.find(e.id))
-            .set((
-                suppliers::name.eq(e.name),
-                suppliers::billing_amount.eq(e.billing_amount),
-                suppliers::updated_at.eq(e.updated_at),
-            ))
+        if let Err(e) = diesel::update(suppliers::table.find(e.id.clone()))
+            .set(&e)
             .execute(&self.conn)
             .map_err(DaoError::from)
         {

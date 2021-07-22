@@ -24,10 +24,10 @@ impl SupplierFields for Supplier {
         Ok(self.supplier.billing_amount.clone())
     }
 
-    fn field_billing_type(&self, _: &Executor<Context>) -> FieldResult<SupplierBillingType> {
+    fn field_billing_type(&self, _: &Executor<Context>) -> FieldResult<GraphQLBillingType> {
         Ok(match self.supplier.billing_type {
-            domain::supplier::BillingType::Monthly => SupplierBillingType::Monthly,
-            domain::supplier::BillingType::OneTime => SupplierBillingType::OneTime,
+            domain::supplier::BillingType::Monthly => GraphQLBillingType::Monthly,
+            domain::supplier::BillingType::OneTime => GraphQLBillingType::OneTime,
         })
     }
 }

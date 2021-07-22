@@ -1,4 +1,5 @@
 use crate::domain;
+use crate::graphql::invoice::InvoiceConnection;
 use crate::graphql::me::*;
 use crate::graphql::Context;
 use crate::graphql::*;
@@ -24,5 +25,34 @@ impl QueryFields for Query {
         let user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
 
         Ok(Me { user })
+    }
+
+    async fn field_get_invoice_list<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, InvoiceConnection, Walked>,
+        input: GetInvoiceListInput,
+    ) -> FieldResult<InvoiceConnection> {
+        let ctx = exec.context();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let supplier_id = input.supplier_id;
+
+        let supplier = supplier_dao.get(supplier_id).map_err(FieldError::from)?;
+
+        if supplier.user_id != authorized_user_id {
+            return Err(FieldError::from("unauthorized"));
+        }
+
+        let invoices = invoice_dao
+            .get_all_by_supplier(supplier.id)
+            .map_err(FieldError::from)?;
+
+        Ok(InvoiceConnection(invoices))
     }
 }

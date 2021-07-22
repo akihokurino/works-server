@@ -14,6 +14,9 @@ use dotenv;
 use juniper_actix::{graphql_handler, playground_handler};
 use std::env;
 
+const INVOICE_BUCKET: &str = "works-userdata";
+const INVOICE_PDF_DOWNLOAD_DURATION: u32 = 86400;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let env_path = env::var("RUST_ENV").expect("should set env");

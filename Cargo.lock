@@ -544,6 +544,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "cloud-storage"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38a80e16e48e19ebaa0186530f7f31bb4cd6b9e3e0bbf55272845b05aac8825f"
+dependencies = [
+ "base64 0.12.3",
+ "bytes 0.5.6",
+ "chrono",
+ "dotenv",
+ "futures",
+ "hex",
+ "jsonwebtoken",
+ "lazy_static",
+ "openssl",
+ "percent-encoding 2.1.0",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "colored"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2360,10 +2382,23 @@ dependencies = [
  "memchr",
  "mio",
  "mio-uds",
+ "num_cpus",
  "pin-project-lite 0.1.12",
  "signal-hook-registry",
  "slab",
+ "tokio-macros",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e44da00bfc73a25f814cd8d7e57a68a5c31b74b3152a0a1d1f590c97ed06265a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2756,10 +2791,12 @@ dependencies = [
  "actix-web",
  "async-trait",
  "chrono",
+ "cloud-storage",
  "derive_more",
  "diesel",
  "diesel_migrations",
  "dotenv",
+ "encoding_rs",
  "jsonwebtoken",
  "juniper",
  "juniper-from-schema",

@@ -35,6 +35,7 @@ table! {
         subject -> Varchar,
         total_amount -> Integer,
         tax -> Integer,
+        pdf_path -> Nullable<Varchar>,
         created_at -> Datetime,
         updated_at -> Datetime,
     }

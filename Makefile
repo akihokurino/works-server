@@ -5,6 +5,7 @@ export PATH := $(ROOT)/scripts:$(PATH)
 run-local:
 	RUST_ENV=$(PWD)/.env.local \
 	FIREBASE_CREDENTIALS=$(PWD)/firebase.prod.json \
+	GOOGLE_APPLICATION_CREDENTIALS=$(PWD)/gcp.prod.json \
  	cargo run
 
 build:

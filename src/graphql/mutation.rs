@@ -1,13 +1,16 @@
-use crate::ddb;
 use crate::ddb::DaoError;
-use crate::domain;
 use crate::graphql::me::Me;
 use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
 use crate::graphql::*;
 use crate::misoca;
+use crate::util::sjis_to_utf8;
+use crate::{ddb, INVOICE_BUCKET};
+use crate::{domain, INVOICE_PDF_DOWNLOAD_DURATION};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use cloud_storage::Object;
+use encoding_rs;
 use juniper::{Executor, FieldResult};
 use juniper_from_schema::{QueryTrail, Walked};
 
@@ -114,7 +117,6 @@ impl MutationFields for Mutation {
                 }
 
                 supplier.update(name, billing_amount, now);
-
                 supplier_dao.update(&supplier)?;
                 Ok(supplier)
             })
@@ -181,7 +183,6 @@ impl MutationFields for Mutation {
         let refresh_token = tokens.refresh_token;
 
         user.update_misoca_refresh_token(refresh_token, now);
-
         user_dao
             .tx(|| {
                 user_dao.update(&user)?;
@@ -252,7 +253,6 @@ impl MutationFields for Mutation {
         let refresh_token = tokens.refresh_token;
 
         user.update_misoca_refresh_token(refresh_token, now);
-
         user_dao
             .tx(|| {
                 user_dao.update(&user)?;
@@ -288,5 +288,96 @@ impl MutationFields for Mutation {
         }
 
         Ok(true)
+    }
+
+    async fn field_download_invoice_pdf<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        input: DownloadInvoicePDFInput,
+    ) -> FieldResult<String> {
+        let ctx = exec.context();
+        let user_dao = ctx.ddb_dao::<domain::user::User>();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
+        let misoca_cli = &ctx.misoca_cli;
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let now: DateTime<Utc> = Utc::now();
+        let invoice_id = input.invoice_id;
+
+        let mut user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
+        let mut invoice = invoice_dao
+            .get(invoice_id.clone())
+            .map_err(FieldError::from)?;
+
+        let next_path = format!(
+            "/invoice/{}_{}.pdf",
+            invoice.id.clone(),
+            invoice.updated_at.format("%Y%m%d%H%M%S")
+        );
+
+        if let Some(path) = invoice.pdf_path.clone() {
+            if next_path == path {
+                let download_url = Object::read(INVOICE_BUCKET, path.as_str())
+                    .await
+                    .map(|o| o.download_url(INVOICE_PDF_DOWNLOAD_DURATION))
+                    .map_err(FieldError::from)?;
+                return Ok(download_url.unwrap_or("".to_string()));
+            }
+        }
+
+        if user.misoca_refresh_token.is_empty() {
+            return Err(FieldError::from("you should connect misoca"));
+        }
+
+        let tokens = misoca_cli
+            .refresh_tokens(misoca::refresh_tokens::Input {
+                refresh_token: user.misoca_refresh_token.clone(),
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        let access_token = tokens.access_token;
+        let refresh_token = tokens.refresh_token;
+
+        user.update_misoca_refresh_token(refresh_token, now);
+        user_dao
+            .tx(|| {
+                user_dao.update(&user)?;
+                Ok(())
+            })
+            .map_err(FieldError::from)?;
+
+        let data = misoca_cli
+            .get_pdf(misoca::get_pdf::Input {
+                access_token,
+                invoice_id: invoice.id.clone(),
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        let object = Object::create(
+            INVOICE_BUCKET,
+            sjis_to_utf8(data).as_bytes().to_vec(),
+            next_path.as_str(),
+            "application/pdf",
+        )
+        .await
+        .map_err(FieldError::from)?;
+
+        invoice.update_pdf_path(next_path);
+        invoice_dao
+            .tx(|| {
+                invoice_dao.update(&invoice)?;
+                Ok(())
+            })
+            .map_err(FieldError::from)?;
+
+        let download_url = object
+            .download_url(INVOICE_PDF_DOWNLOAD_DURATION)
+            .map_err(FieldError::from)?;
+        Ok(download_url)
     }
 }

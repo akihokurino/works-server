@@ -189,6 +189,20 @@ impl Client {
                 .collect::<Vec<_>>()
         })
     }
+
+    pub async fn get_pdf(&self, input: get_pdf::Input) -> MisocaResult<get_pdf::Output> {
+        let client = reqwest::Client::new();
+        let mut url = self.service_base_url.clone();
+        url.set_path(format!("/api/v3/invoice/{}/pdf", input.invoice_id).as_str());
+        let resp: Response = client
+            .get(url)
+            .header("Authorization", format!("bearer {}", input.access_token))
+            .send()
+            .await
+            .map_err(MisocaError::from)?;
+        let content = resp.text().await.map_err(MisocaError::from)?;
+        Ok(content)
+    }
 }
 
 pub mod get_tokens {
@@ -304,10 +318,23 @@ impl Invoice {
             subject: self.subject.clone().unwrap_or("".to_string()),
             total_amount: util::f64_to_i32(total_amount),
             tax: util::f64_to_i32(tax),
+            pdf_path: None,
             created_at: created_at.naive_utc(),
             updated_at: updated_at.naive_utc(),
         })
     }
+}
+
+pub mod get_pdf {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub invoice_id: String,
+    }
+
+    pub type Output = String;
 }
 
 #[derive(Default)]

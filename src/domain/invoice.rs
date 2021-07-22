@@ -13,8 +13,15 @@ pub struct Invoice {
     pub subject: String,
     pub total_amount: i32,
     pub tax: i32,
+    pub pdf_path: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+}
+
+impl Invoice {
+    pub fn update_pdf_path(&mut self, path: String) {
+        self.pdf_path = Some(path);
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

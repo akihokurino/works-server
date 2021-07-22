@@ -25,6 +25,7 @@ pub struct Entity {
     pub subject: String,
     pub total_amount: i32,
     pub tax: i32,
+    pub pdf_path: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -47,6 +48,7 @@ impl TryFrom<Entity> for domain::invoice::Invoice {
             subject: e.subject,
             total_amount: e.total_amount,
             tax: e.tax,
+            pdf_path: e.pdf_path,
             created_at: e.created_at,
             updated_at: e.updated_at,
         })
@@ -69,6 +71,7 @@ impl From<domain::invoice::Invoice> for Entity {
             subject: d.subject,
             total_amount: d.total_amount,
             tax: d.tax,
+            pdf_path: d.pdf_path,
             created_at: d.created_at,
             updated_at: d.updated_at,
         }

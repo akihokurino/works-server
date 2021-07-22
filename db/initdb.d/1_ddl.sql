@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `invoices` (
     `subject` VARCHAR(255) NOT NULL,
     `total_amount` INT(11) NOT NULL,
     `tax` INT(11) NOT NULL,
+    `pdf_path` VARCHAR(255) NOT NULL,
     `created_at` DATETIME NOT NULL,
     `updated_at` DATETIME NOT NULL,
     PRIMARY KEY (`id`),

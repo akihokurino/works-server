@@ -4,13 +4,12 @@ use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
 use crate::graphql::*;
 use crate::misoca;
-use crate::util::sjis_to_utf8;
 use crate::{ddb, INVOICE_BUCKET};
 use crate::{domain, INVOICE_PDF_DOWNLOAD_DURATION};
+use actix_web::web::Buf;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use cloud_storage::Object;
-use encoding_rs;
 use juniper::{Executor, FieldResult};
 use juniper_from_schema::{QueryTrail, Walked};
 
@@ -313,7 +312,7 @@ impl MutationFields for Mutation {
             .map_err(FieldError::from)?;
 
         let next_path = format!(
-            "/invoice/{}_{}.pdf",
+            "invoice/{}_{}.pdf",
             invoice.id.clone(),
             invoice.updated_at.format("%Y%m%d%H%M%S")
         );
@@ -360,7 +359,7 @@ impl MutationFields for Mutation {
 
         let object = Object::create(
             INVOICE_BUCKET,
-            sjis_to_utf8(data).as_bytes().to_vec(),
+            data.bytes().to_vec(),
             next_path.as_str(),
             "application/pdf",
         )

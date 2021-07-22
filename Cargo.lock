@@ -2796,7 +2796,6 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "dotenv",
- "encoding_rs",
  "jsonwebtoken",
  "juniper",
  "juniper-from-schema",

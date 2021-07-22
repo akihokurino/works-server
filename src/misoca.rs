@@ -1,6 +1,7 @@
 use crate::domain;
 use crate::domain::YMD;
 use crate::util;
+use actix_web::web::Bytes;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Body, Method, Response, Url};
 use serde::{Deserialize, Serialize};
@@ -200,8 +201,8 @@ impl Client {
             .send()
             .await
             .map_err(MisocaError::from)?;
-        let content = resp.text().await.map_err(MisocaError::from)?;
-        Ok(content)
+        let bytes = resp.bytes().await.map_err(MisocaError::from)?;
+        Ok(bytes)
     }
 }
 
@@ -334,7 +335,7 @@ pub mod get_pdf {
         pub invoice_id: String,
     }
 
-    pub type Output = String;
+    pub type Output = Bytes;
 }
 
 #[derive(Default)]

@@ -22,6 +22,10 @@ impl Invoice {
     pub fn update_pdf_path(&mut self, path: String) {
         self.pdf_path = Some(path);
     }
+
+    pub fn should_update(&self, other: &Invoice) -> bool {
+        self.updated_at != other.updated_at
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

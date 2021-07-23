@@ -126,4 +126,15 @@ impl Dao<domain::invoice::Invoice> {
         }
         Ok(())
     }
+
+    pub fn delete_by_supplier(&self, supplier_id: String) -> DaoResult<()> {
+        if let Err(e) = diesel::delete(invoices::table)
+            .filter(invoices::supplier_id.eq(supplier_id))
+            .execute(&self.conn)
+            .map_err(DaoError::from)
+        {
+            return Err(e);
+        }
+        Ok(())
+    }
 }

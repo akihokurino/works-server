@@ -1,6 +1,5 @@
 use crate::domain;
 use crate::graphql::invoice::InvoiceConnection;
-use crate::graphql::me::*;
 use crate::graphql::Context;
 use crate::graphql::*;
 use async_trait::async_trait;

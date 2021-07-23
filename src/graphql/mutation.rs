@@ -12,6 +12,7 @@ use chrono::{DateTime, Utc};
 use cloud_storage::Object;
 use juniper::{Executor, FieldResult};
 use juniper_from_schema::{QueryTrail, Walked};
+use sync_invoice;
 
 pub struct Mutation;
 #[async_trait]
@@ -131,6 +132,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<bool> {
         let ctx = exec.context();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
@@ -145,6 +147,7 @@ impl MutationFields for Mutation {
                     return Err(DaoError::Forbidden);
                 }
 
+                invoice_dao.delete_by_supplier(supplier.id.clone())?;
                 supplier_dao.delete(supplier.id.clone())?;
                 Ok(())
             })
@@ -189,32 +192,14 @@ impl MutationFields for Mutation {
             })
             .map_err(FieldError::from)?;
 
-        let suppliers = supplier_dao
-            .get_all_by_user(user.id.clone())
-            .map_err(FieldError::from)?;
-
-        for supplier in suppliers {
-            let invoices = misoca_cli
-                .get_invoices(
-                    misoca::get_invoices::Input {
-                        access_token: access_token.clone(),
-                        page: 1,
-                        per_page: 100,
-                    },
-                    &supplier,
-                )
-                .await
-                .map_err(FieldError::from)?;
-
-            invoice_dao
-                .tx(|| {
-                    for invoice in invoices {
-                        invoice_dao.insert(&invoice)?;
-                    }
-                    Ok(())
-                })
-                .map_err(FieldError::from)?;
-        }
+        sync_invoice::exec(
+            supplier_dao,
+            invoice_dao,
+            misoca_cli.clone(),
+            user.id.clone(),
+            access_token.clone(),
+        )
+        .await?;
 
         Ok(true)
     }
@@ -259,32 +244,14 @@ impl MutationFields for Mutation {
             })
             .map_err(FieldError::from)?;
 
-        let suppliers = supplier_dao
-            .get_all_by_user(user.id.clone())
-            .map_err(FieldError::from)?;
-
-        for supplier in suppliers {
-            let invoices = misoca_cli
-                .get_invoices(
-                    misoca::get_invoices::Input {
-                        access_token: access_token.clone(),
-                        page: 1,
-                        per_page: 100,
-                    },
-                    &supplier,
-                )
-                .await
-                .map_err(FieldError::from)?;
-
-            invoice_dao
-                .tx(|| {
-                    for invoice in invoices {
-                        invoice_dao.insert(&invoice)?;
-                    }
-                    Ok(())
-                })
-                .map_err(FieldError::from)?;
-        }
+        sync_invoice::exec(
+            supplier_dao,
+            invoice_dao,
+            misoca_cli.clone(),
+            user.id.clone(),
+            access_token.clone(),
+        )
+        .await?;
 
         Ok(true)
     }

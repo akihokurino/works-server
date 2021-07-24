@@ -2,6 +2,13 @@
 
 請求書管理システム
 
+## 構成
+- rust 1.53.0
+- juniper https://github.com/graphql-rust/juniper
+- diesel
+- k8s
+- firebase auth
+
 ## Misoca API
 
 ```

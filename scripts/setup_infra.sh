@@ -46,7 +46,7 @@ gcloud compute routers nats create works-server \
   --nat-custom-subnet-ip-ranges="${SUBNET_NAME}"
 
 echo -e "\n\033[1;32m----- GKE Cluster作成 -----\033[0;39m"
-gcloud container clusters create api-cluster \
+gcloud container clusters create app-cluster \
   --project=${PROJECT} \
   --zone=asia-northeast1-a \
   --network=${VPC_NAME} \
@@ -61,4 +61,4 @@ gcloud container clusters create api-cluster \
   --no-issue-client-certificate \
   --machine-type=e2-micro \
   --disk-size=30 \
-  --num-nodes=1
+  --num-nodes=3

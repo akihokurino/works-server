@@ -1,21 +1,10 @@
-mod ddb;
-mod domain;
-mod firebase;
-mod graphql;
-mod misoca;
-mod util;
-
-#[macro_use]
-extern crate diesel;
-
-use crate::firebase::auth;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
+use app_core::firebase::auth;
+use app_core::graphql;
+use app_core::misoca;
 use dotenv;
 use juniper_actix::{graphql_handler, playground_handler};
 use std::env;
-
-const INVOICE_BUCKET: &str = "works-userdata";
-const INVOICE_PDF_DOWNLOAD_DURATION: u32 = 86400;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

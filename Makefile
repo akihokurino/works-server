@@ -2,14 +2,23 @@ MAKEFLAGS=--no-builtin-rules --no-builtin-variables --always-make
 ROOT := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 export PATH := $(ROOT)/scripts:$(PATH)
 
-run-local:
+run-api:
 	RUST_ENV=$(PWD)/.env.local \
 	FIREBASE_CREDENTIALS=$(PWD)/firebase.prod.json \
 	GOOGLE_APPLICATION_CREDENTIALS=$(PWD)/gcp.prod.json \
- 	cargo run
+ 	cargo run --bin app-api
 
-build:
-	cargo build
+run-batch-sync-invoice:
+	RUST_ENV=$(PWD)/.env.local \
+	FIREBASE_CREDENTIALS=$(PWD)/firebase.prod.json \
+	GOOGLE_APPLICATION_CREDENTIALS=$(PWD)/gcp.prod.json \
+ 	cargo run --bin app-batch sync-invoice
+
+build-api:
+	cargo build --bin app-api
+
+build-batch:
+	cargo build --bin app-batch
 
 clean:
 	cargo clean

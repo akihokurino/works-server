@@ -8,13 +8,13 @@ PROJECT=works-${ENV}
 
 gcloud config set project ${PROJECT}
 
-export API_IMAGE=gcr.io/${PROJECT}/api:${VER}
-docker build . -t ${API_IMAGE}
+export IMAGE=gcr.io/${PROJECT}/app:${VER}
+docker build . -t ${IMAGE}
 docker login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" https://gcr.io
-docker push ${API_IMAGE}
+docker push ${IMAGE}
 
-gcloud container clusters get-credentials api-cluster --zone=asia-northeast1-a
-envsubst < k8s.api.${ENV}.yaml | cat | kubectl apply -f -
+gcloud container clusters get-credentials app-cluster --zone=asia-northeast1-a
+envsubst < k8s.${ENV}.yaml | cat | kubectl apply -f -
 
 docker rmi -f `docker images | grep "gcr.io/${PROJECT}" | awk '{print $3}'`
 docker rmi -f `docker images | grep "<none>" | awk '{print $3}'`

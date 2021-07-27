@@ -2,6 +2,8 @@ MAKEFLAGS=--no-builtin-rules --no-builtin-variables --always-make
 ROOT := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 export PATH := $(ROOT)/scripts:$(PATH)
 
+IMAGE := ""
+
 run-api:
 	RUST_ENV=$(PWD)/.env.local \
 	FIREBASE_CREDENTIALS=$(PWD)/firebase.prod.json \
@@ -26,9 +28,17 @@ clean:
 proxy_db:
 	cloud_sql_proxy -credential_file=gcp.prod.json -instances=works-prod:asia-northeast1:main=tcp:0.0.0.0:3306
 
-deploy:
+deploy-secret:
 	ENV=prod deploy_secret.sh
+
+deploy: deploy-secret
 	ENV=prod deploy.sh
+
+instant-deploy: deploy-secret
+	export IMAGE=$(IMAGE)
+	gcloud config set project works-prod
+	gcloud container clusters get-credentials app-cluster --zone=asia-northeast1-a
+	envsubst < k8s.prod.yaml | cat | kubectl apply -f -
 
 setup_infra:
 	ENV=prod setup_infra.sh

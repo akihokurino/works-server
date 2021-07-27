@@ -61,4 +61,4 @@ gcloud container clusters create app-cluster \
   --no-issue-client-certificate \
   --machine-type=e2-micro \
   --disk-size=30 \
-  --num-nodes=3
+  --num-nodes=1

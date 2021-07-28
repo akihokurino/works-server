@@ -1,7 +1,7 @@
 use crate::ddb;
 use crate::domain;
-use crate::errors;
 use crate::misoca;
+use crate::{CoreError, CoreResult};
 
 pub async fn exec(
     supplier_dao: ddb::Dao<domain::supplier::Supplier>,
@@ -9,10 +9,10 @@ pub async fn exec(
     misoca_cli: misoca::Client,
     user_id: String,
     access_token: String,
-) -> errors::CoreResult<()> {
+) -> CoreResult<()> {
     let suppliers = supplier_dao
         .get_all_by_user(user_id)
-        .map_err(errors::CoreError::from)?;
+        .map_err(CoreError::from)?;
 
     for supplier in suppliers {
         let invoices = misoca_cli
@@ -25,7 +25,7 @@ pub async fn exec(
                 &supplier,
             )
             .await
-            .map_err(errors::CoreError::from)?;
+            .map_err(CoreError::from)?;
 
         invoice_dao
             .tx(|| {
@@ -36,7 +36,7 @@ pub async fn exec(
                                 invoice_dao.update(&invoice)?;
                             }
                         }
-                        Err(errors::CoreError::NotFound) => {
+                        Err(CoreError::NotFound) => {
                             invoice_dao.insert(&invoice)?;
                         }
                         Err(_) => {}
@@ -44,7 +44,7 @@ pub async fn exec(
                 }
                 Ok(())
             })
-            .map_err(errors::CoreError::from)?;
+            .map_err(CoreError::from)?;
     }
 
     Ok(())

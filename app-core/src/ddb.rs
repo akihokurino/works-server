@@ -3,7 +3,7 @@ mod schema;
 pub mod supplier;
 pub mod user;
 
-use crate::errors;
+use crate::CoreResult;
 use diesel::mysql::MysqlConnection;
 use diesel::prelude::*;
 use std::env;
@@ -28,9 +28,9 @@ impl<T> Dao<T> {
         }
     }
 
-    pub fn tx<R, F>(&self, exec: F) -> errors::CoreResult<R>
+    pub fn tx<R, F>(&self, exec: F) -> CoreResult<R>
     where
-        F: FnOnce() -> errors::CoreResult<R>,
+        F: FnOnce() -> CoreResult<R>,
     {
         self.conn.transaction(|| exec())
     }

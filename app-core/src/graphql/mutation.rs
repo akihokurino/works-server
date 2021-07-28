@@ -1,5 +1,4 @@
 use crate::domain;
-use crate::errors;
 use crate::graphql::me::Me;
 use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
@@ -7,6 +6,7 @@ use crate::graphql::*;
 use crate::misoca;
 use crate::INVOICE_BUCKET;
 use crate::INVOICE_PDF_DOWNLOAD_DURATION;
+use crate::{CoreError, CoreResult};
 use actix_web::web::Buf;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -34,9 +34,9 @@ impl MutationFields for Mutation {
         let user = user_dao.get(authorized_user_id.clone());
 
         match user {
-            errors::CoreResult::Ok(user) => Ok(Me { user }),
-            errors::CoreResult::Err(err) => {
-                if err != errors::CoreError::NotFound {
+            CoreResult::Ok(user) => Ok(Me { user }),
+            CoreResult::Err(err) => {
+                if err != CoreError::NotFound {
                     return Err(FieldError::from(err));
                 }
 
@@ -113,7 +113,7 @@ impl MutationFields for Mutation {
             .tx(|| {
                 let mut supplier = supplier_dao.get(id.clone())?;
                 if supplier.user_id != authorized_user_id {
-                    return Err(errors::CoreError::Forbidden);
+                    return Err(CoreError::Forbidden);
                 }
 
                 supplier.update(name, billing_amount, now);
@@ -144,7 +144,7 @@ impl MutationFields for Mutation {
             .tx(|| {
                 let supplier = supplier_dao.get(id.clone())?;
                 if supplier.user_id != authorized_user_id {
-                    return Err(errors::CoreError::Forbidden);
+                    return Err(CoreError::Forbidden);
                 }
 
                 invoice_dao.delete_by_supplier(supplier.id.clone())?;

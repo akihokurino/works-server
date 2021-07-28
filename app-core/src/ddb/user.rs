@@ -1,7 +1,7 @@
 use crate::ddb::schema::users;
 use crate::ddb::Dao;
 use crate::domain;
-use crate::errors;
+use crate::{CoreError, CoreResult};
 use diesel::prelude::*;
 use std::convert::TryFrom;
 
@@ -39,32 +39,32 @@ impl From<domain::user::User> for Entity {
 }
 
 impl Dao<domain::user::User> {
-    pub fn get(&self, id: String) -> errors::CoreResult<domain::user::User> {
+    pub fn get(&self, id: String) -> CoreResult<domain::user::User> {
         users::table
             .find(id)
             .first(&self.conn)
             .map(|v: Entity| domain::user::User::try_from(v).unwrap())
-            .map_err(errors::CoreError::from)
+            .map_err(CoreError::from)
     }
 
-    pub fn insert(&self, item: &domain::user::User) -> errors::CoreResult<()> {
+    pub fn insert(&self, item: &domain::user::User) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(users::table)
             .values(e)
             .execute(&self.conn)
-            .map_err(errors::CoreError::from)
+            .map_err(CoreError::from)
         {
             return Err(e);
         }
         Ok(())
     }
 
-    pub fn update(&self, item: &domain::user::User) -> errors::CoreResult<()> {
+    pub fn update(&self, item: &domain::user::User) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::update(users::table.find(e.id.clone()))
             .set(&e)
             .execute(&self.conn)
-            .map_err(errors::CoreError::from)
+            .map_err(CoreError::from)
         {
             return Err(e);
         }

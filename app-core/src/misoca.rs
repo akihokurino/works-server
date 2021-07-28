@@ -1,7 +1,7 @@
 use crate::domain;
 use crate::domain::YMD;
-use crate::errors;
 use crate::util;
+use crate::{CoreError, CoreResult};
 use actix_web::web::Bytes;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Body, Method, Response, Url};
@@ -26,7 +26,7 @@ impl Client {
         }
     }
 
-    async fn call(&self, input: CallInput, token: String) -> errors::CoreResult<Response> {
+    async fn call(&self, input: CallInput, token: String) -> CoreResult<Response> {
         let mut url = self.service_base_url.clone();
         url.set_path(format!("{}", input.path).as_str());
         for q in input.query {
@@ -53,18 +53,15 @@ impl Client {
         *req.body_mut() = input.body;
 
         let cli = reqwest::Client::new();
-        let resp = cli.execute(req).await.map_err(|e| -> errors::CoreError {
+        let resp = cli.execute(req).await.map_err(|e| -> CoreError {
             println!("error: {}", e.to_string());
-            errors::CoreError::from(e)
+            CoreError::from(e)
         })?;
 
         Ok(resp)
     }
 
-    pub async fn get_tokens(
-        &self,
-        input: get_tokens::Input,
-    ) -> errors::CoreResult<get_tokens::Output> {
+    pub async fn get_tokens(&self, input: get_tokens::Input) -> CoreResult<get_tokens::Output> {
         #[derive(Debug, Serialize)]
         struct Body {
             pub client_id: String,
@@ -92,7 +89,7 @@ impl Client {
                 path: "/oauth2/token".to_string(),
                 body: Some(
                     serde_json::to_string(&body)
-                        .map_err(|e| errors::CoreError::Internal(e.to_string()))?
+                        .map_err(|e| CoreError::Internal(e.to_string()))?
                         .into(),
                 ),
                 query,
@@ -103,13 +100,13 @@ impl Client {
         .error_for_status()?
         .json::<get_tokens::Output>()
         .await
-        .map_err(errors::CoreError::from)
+        .map_err(CoreError::from)
     }
 
     pub async fn refresh_tokens(
         &self,
         input: refresh_tokens::Input,
-    ) -> errors::CoreResult<refresh_tokens::Output> {
+    ) -> CoreResult<refresh_tokens::Output> {
         #[derive(Debug, Serialize)]
         struct Body {
             pub client_id: String,
@@ -137,7 +134,7 @@ impl Client {
                 path: "/oauth2/token".to_string(),
                 body: Some(
                     serde_json::to_string(&body)
-                        .map_err(|e| errors::CoreError::Internal(e.to_string()))?
+                        .map_err(|e| CoreError::Internal(e.to_string()))?
                         .into(),
                 ),
                 query,
@@ -148,14 +145,14 @@ impl Client {
         .error_for_status()?
         .json::<refresh_tokens::Output>()
         .await
-        .map_err(errors::CoreError::from)
+        .map_err(CoreError::from)
     }
 
     pub async fn get_invoices(
         &self,
         input: get_invoices::Input,
         supplier: &domain::supplier::Supplier,
-    ) -> errors::CoreResult<Vec<domain::invoice::Invoice>> {
+    ) -> CoreResult<Vec<domain::invoice::Invoice>> {
         #[derive(Debug, Serialize)]
         struct Body {}
 
@@ -175,7 +172,7 @@ impl Client {
                 path: "/api/v3/invoices".to_string(),
                 body: Some(
                     serde_json::to_string(&body)
-                        .map_err(|e| errors::CoreError::Internal(e.to_string()))?
+                        .map_err(|e| CoreError::Internal(e.to_string()))?
                         .into(),
                 ),
                 query,
@@ -186,7 +183,7 @@ impl Client {
         .error_for_status()?
         .json::<get_invoices::Output>()
         .await
-        .map_err(errors::CoreError::from)
+        .map_err(CoreError::from)
         .map(|item| {
             item.into_iter()
                 .map(|v| v.to_domain(supplier).unwrap())
@@ -194,7 +191,7 @@ impl Client {
         })
     }
 
-    pub async fn get_pdf(&self, input: get_pdf::Input) -> errors::CoreResult<get_pdf::Output> {
+    pub async fn get_pdf(&self, input: get_pdf::Input) -> CoreResult<get_pdf::Output> {
         let client = reqwest::Client::new();
         let mut url = self.service_base_url.clone();
         url.set_path(format!("/api/v3/invoice/{}/pdf", input.invoice_id).as_str());
@@ -203,8 +200,8 @@ impl Client {
             .header("Authorization", format!("bearer {}", input.access_token))
             .send()
             .await
-            .map_err(errors::CoreError::from)?;
-        let bytes = resp.bytes().await.map_err(errors::CoreError::from)?;
+            .map_err(CoreError::from)?;
+        let bytes = resp.bytes().await.map_err(CoreError::from)?;
         Ok(bytes)
     }
 }
@@ -277,7 +274,7 @@ impl Invoice {
     fn to_domain(
         &self,
         supplier: &domain::supplier::Supplier,
-    ) -> errors::CoreResult<domain::invoice::Invoice> {
+    ) -> CoreResult<domain::invoice::Invoice> {
         let body = self.body.as_ref().unwrap();
 
         let total_amount: f64 = body
@@ -288,23 +285,22 @@ impl Invoice {
             .unwrap();
         let tax: f64 = body.tax.clone().unwrap_or("0".to_string()).parse().unwrap();
 
-        let issue_ymd =
-            YMD::from_str(self.issue_date.clone().unwrap_or("".to_string()).as_str())
-                .map_err(|_e| errors::CoreError::Internal("cannot parse issue_date".to_string()))?;
+        let issue_ymd = YMD::from_str(self.issue_date.clone().unwrap_or("".to_string()).as_str())
+            .map_err(|_e| CoreError::Internal("cannot parse issue_date".to_string()))?;
         let payment_due_on_ymd = YMD::from_str(
             self.payment_due_on
                 .clone()
                 .unwrap_or("".to_string())
                 .as_str(),
         )
-        .map_err(|_e| errors::CoreError::Internal("cannot parse payment_due_on".to_string()))?;
+        .map_err(|_e| CoreError::Internal("cannot parse payment_due_on".to_string()))?;
 
         let created_at =
             chrono::DateTime::parse_from_rfc3339(self.created_at.clone().unwrap().as_str())
-                .map_err(|_e| errors::CoreError::Internal("cannot parse created_at".to_string()))?;
+                .map_err(|_e| CoreError::Internal("cannot parse created_at".to_string()))?;
         let updated_at =
             chrono::DateTime::parse_from_rfc3339(self.updated_at.clone().unwrap().as_str())
-                .map_err(|_e| errors::CoreError::Internal("cannot parse updated_at".to_string()))?;
+                .map_err(|_e| CoreError::Internal("cannot parse updated_at".to_string()))?;
 
         Ok(domain::invoice::Invoice {
             id: String::from(self.id.unwrap().to_string()),

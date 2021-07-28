@@ -1,12 +1,9 @@
 pub mod auth;
 
-use jsonwebtoken;
-use reqwest;
 use serde::Deserialize;
 use std::env;
 use std::fs::File;
 use std::io::BufReader;
-use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct FirebaseConfig {
@@ -27,23 +24,3 @@ impl FirebaseConfig {
         config
     }
 }
-
-#[derive(Error, Debug, PartialOrd, PartialEq)]
-pub enum FirebaseError {
-    #[error("firebase error: {0}")]
-    Internal(String),
-}
-
-impl From<jsonwebtoken::errors::Error> for FirebaseError {
-    fn from(e: jsonwebtoken::errors::Error) -> Self {
-        Self::Internal(e.to_string())
-    }
-}
-
-impl From<reqwest::Error> for FirebaseError {
-    fn from(e: reqwest::Error) -> Self {
-        Self::Internal(e.to_string())
-    }
-}
-
-pub type FirebaseResult<R> = Result<R, FirebaseError>;

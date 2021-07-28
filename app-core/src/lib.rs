@@ -1,8 +1,10 @@
 pub mod ddb;
 pub mod domain;
+pub mod errors;
 pub mod firebase;
 pub mod graphql;
 pub mod misoca;
+pub mod task;
 pub mod util;
 
 #[macro_use]

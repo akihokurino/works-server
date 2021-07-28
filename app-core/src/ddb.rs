@@ -3,12 +3,11 @@ mod schema;
 pub mod supplier;
 pub mod user;
 
-use std::env;
-use std::marker::PhantomData;
-
+use crate::errors;
 use diesel::mysql::MysqlConnection;
 use diesel::prelude::*;
-use thiserror::Error;
+use std::env;
+use std::marker::PhantomData;
 
 pub fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -29,37 +28,10 @@ impl<T> Dao<T> {
         }
     }
 
-    pub fn tx<R, F>(&self, exec: F) -> DaoResult<R>
+    pub fn tx<R, F>(&self, exec: F) -> errors::CoreResult<R>
     where
-        F: FnOnce() -> DaoResult<R>,
+        F: FnOnce() -> errors::CoreResult<R>,
     {
         self.conn.transaction(|| exec())
     }
 }
-
-#[derive(Error, Debug, PartialOrd, PartialEq)]
-pub enum DaoError {
-    #[error("notfound")]
-    NotFound,
-    #[error("forbidden")]
-    Forbidden,
-    #[error("internal error: {0}")]
-    Internal(String),
-}
-
-impl From<diesel::result::Error> for DaoError {
-    fn from(e: diesel::result::Error) -> Self {
-        match e {
-            diesel::result::Error::NotFound => Self::NotFound,
-            _ => Self::Internal(e.to_string()),
-        }
-    }
-}
-
-impl From<String> for DaoError {
-    fn from(v: String) -> Self {
-        Self::Internal(v)
-    }
-}
-
-pub type DaoResult<R> = Result<R, DaoError>;

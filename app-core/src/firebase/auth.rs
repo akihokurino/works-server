@@ -1,5 +1,5 @@
-use crate::firebase::{FirebaseConfig, FirebaseError, FirebaseResult};
-
+use crate::errors;
+use crate::firebase::FirebaseConfig;
 use jsonwebtoken::{decode_header, Algorithm, DecodingKey, Validation};
 use reqwest;
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ pub struct Claims {
     pub uid: Option<String>,
 }
 
-pub async fn verify_id_token(token: &str) -> FirebaseResult<String> {
+pub async fn verify_id_token(token: &str) -> errors::CoreResult<String> {
     let firebase_config = FirebaseConfig::new();
     verify(token, &firebase_config)
         .await
@@ -25,7 +25,7 @@ pub async fn verify_id_token(token: &str) -> FirebaseResult<String> {
 async fn verify(
     token: &str,
     firebase_config: &FirebaseConfig,
-) -> FirebaseResult<jsonwebtoken::TokenData<Claims>> {
+) -> errors::CoreResult<jsonwebtoken::TokenData<Claims>> {
     let project_id = firebase_config.project_id.clone();
 
     let kid = match decode_header(token).map(|header| header.kid) {
@@ -33,12 +33,12 @@ async fn verify(
         Ok(None) => {
             let err =
                 jsonwebtoken::errors::Error::from(jsonwebtoken::errors::ErrorKind::__Nonexhaustive);
-            return Err(FirebaseError::from(err));
+            return Err(errors::CoreError::from(err));
         }
-        Err(err) => return Err(FirebaseError::from(err)),
+        Err(err) => return Err(errors::CoreError::from(err)),
     };
 
-    let jwks = get_firebase_jwks().await.map_err(FirebaseError::from)?;
+    let jwks = get_firebase_jwks().await.map_err(errors::CoreError::from)?;
     let jwk = jwks.get(&kid).unwrap();
 
     let mut validation = Validation {
@@ -52,7 +52,7 @@ async fn verify(
     validation.set_audience(&[project_id]);
 
     let key = DecodingKey::from_rsa_components(&jwk.n, &jwk.e);
-    jsonwebtoken::decode::<Claims>(token, &key, &validation).map_err(FirebaseError::from)
+    jsonwebtoken::decode::<Claims>(token, &key, &validation).map_err(errors::CoreError::from)
 }
 
 #[derive(Debug, Deserialize, Eq, PartialEq)]

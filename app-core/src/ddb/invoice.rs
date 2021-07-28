@@ -1,7 +1,8 @@
 use crate::ddb::schema::invoices;
 use crate::ddb::supplier;
-use crate::ddb::{Dao, DaoError, DaoResult};
+use crate::ddb::Dao;
 use crate::domain;
+use crate::errors;
 use diesel::prelude::*;
 use std::convert::TryFrom;
 use std::str::FromStr;
@@ -82,7 +83,7 @@ impl Dao<domain::invoice::Invoice> {
     pub fn get_all_by_supplier(
         &self,
         supplier_id: String,
-    ) -> DaoResult<Vec<domain::invoice::Invoice>> {
+    ) -> errors::CoreResult<Vec<domain::invoice::Invoice>> {
         return invoices::table
             .filter(invoices::supplier_id.eq(supplier_id))
             .order(invoices::issue_at.desc())
@@ -92,46 +93,46 @@ impl Dao<domain::invoice::Invoice> {
                     .map(|v| domain::invoice::Invoice::try_from(v).unwrap())
                     .collect::<Vec<_>>()
             })
-            .map_err(DaoError::from);
+            .map_err(errors::CoreError::from);
     }
 
-    pub fn get(&self, id: String) -> DaoResult<domain::invoice::Invoice> {
+    pub fn get(&self, id: String) -> errors::CoreResult<domain::invoice::Invoice> {
         invoices::table
             .find(id)
             .first(&self.conn)
             .map(|v: Entity| domain::invoice::Invoice::try_from(v).unwrap())
-            .map_err(DaoError::from)
+            .map_err(errors::CoreError::from)
     }
 
-    pub fn insert(&self, item: &domain::invoice::Invoice) -> DaoResult<()> {
+    pub fn insert(&self, item: &domain::invoice::Invoice) -> errors::CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(invoices::table)
             .values(e)
             .execute(&self.conn)
-            .map_err(DaoError::from)
+            .map_err(errors::CoreError::from)
         {
             return Err(e);
         }
         Ok(())
     }
 
-    pub fn update(&self, item: &domain::invoice::Invoice) -> DaoResult<()> {
+    pub fn update(&self, item: &domain::invoice::Invoice) -> errors::CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::update(invoices::table.find(e.id.clone()))
             .set(&e)
             .execute(&self.conn)
-            .map_err(DaoError::from)
+            .map_err(errors::CoreError::from)
         {
             return Err(e);
         }
         Ok(())
     }
 
-    pub fn delete_by_supplier(&self, supplier_id: String) -> DaoResult<()> {
+    pub fn delete_by_supplier(&self, supplier_id: String) -> errors::CoreResult<()> {
         if let Err(e) = diesel::delete(invoices::table)
             .filter(invoices::supplier_id.eq(supplier_id))
             .execute(&self.conn)
-            .map_err(DaoError::from)
+            .map_err(errors::CoreError::from)
         {
             return Err(e);
         }

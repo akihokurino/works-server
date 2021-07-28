@@ -1,18 +1,18 @@
-use crate::ddb::DaoError;
+use crate::domain;
+use crate::errors;
 use crate::graphql::me::Me;
 use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
 use crate::graphql::*;
 use crate::misoca;
-use crate::{ddb, INVOICE_BUCKET};
-use crate::{domain, INVOICE_PDF_DOWNLOAD_DURATION};
+use crate::INVOICE_BUCKET;
+use crate::INVOICE_PDF_DOWNLOAD_DURATION;
 use actix_web::web::Buf;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use cloud_storage::Object;
 use juniper::{Executor, FieldResult};
 use juniper_from_schema::{QueryTrail, Walked};
-use sync_invoice;
 
 pub struct Mutation;
 #[async_trait]
@@ -34,9 +34,9 @@ impl MutationFields for Mutation {
         let user = user_dao.get(authorized_user_id.clone());
 
         match user {
-            ddb::DaoResult::Ok(user) => Ok(Me { user }),
-            ddb::DaoResult::Err(err) => {
-                if err != ddb::DaoError::NotFound {
+            errors::CoreResult::Ok(user) => Ok(Me { user }),
+            errors::CoreResult::Err(err) => {
+                if err != errors::CoreError::NotFound {
                     return Err(FieldError::from(err));
                 }
 
@@ -113,7 +113,7 @@ impl MutationFields for Mutation {
             .tx(|| {
                 let mut supplier = supplier_dao.get(id.clone())?;
                 if supplier.user_id != authorized_user_id {
-                    return Err(DaoError::Forbidden);
+                    return Err(errors::CoreError::Forbidden);
                 }
 
                 supplier.update(name, billing_amount, now);
@@ -144,7 +144,7 @@ impl MutationFields for Mutation {
             .tx(|| {
                 let supplier = supplier_dao.get(id.clone())?;
                 if supplier.user_id != authorized_user_id {
-                    return Err(DaoError::Forbidden);
+                    return Err(errors::CoreError::Forbidden);
                 }
 
                 invoice_dao.delete_by_supplier(supplier.id.clone())?;
@@ -192,14 +192,15 @@ impl MutationFields for Mutation {
             })
             .map_err(FieldError::from)?;
 
-        sync_invoice::exec(
+        domain::service::sync_invoice::exec(
             supplier_dao,
             invoice_dao,
             misoca_cli.clone(),
             user.id.clone(),
             access_token.clone(),
         )
-        .await?;
+        .await
+        .map_err(FieldError::from)?;
 
         Ok(true)
     }
@@ -244,14 +245,15 @@ impl MutationFields for Mutation {
             })
             .map_err(FieldError::from)?;
 
-        sync_invoice::exec(
+        domain::service::sync_invoice::exec(
             supplier_dao,
             invoice_dao,
             misoca_cli.clone(),
             user.id.clone(),
             access_token.clone(),
         )
-        .await?;
+        .await
+        .map_err(FieldError::from)?;
 
         Ok(true)
     }

@@ -1,1 +1,1 @@
-mod sync_invoice;
+pub mod sync_invoice;

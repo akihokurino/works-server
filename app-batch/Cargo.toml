@@ -7,3 +7,6 @@ edition = "2018"
 
 [dependencies]
 app-core = {path = "../app-core" }
+chrono = { version = "0.4", features = ["serde"]}
+tokio = { version = "0.2", features = ["time"] }
+dotenv = "0.15.0"

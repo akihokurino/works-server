@@ -24,27 +24,24 @@ pub async fn exec(
                 },
                 &supplier,
             )
-            .await
-            .map_err(CoreError::from)?;
+            .await?;
 
-        invoice_dao
-            .tx(|| {
-                for invoice in invoices {
-                    match invoice_dao.get(invoice.id.clone()) {
-                        Ok(current) => {
-                            if current.should_update(&invoice) {
-                                invoice_dao.update(&invoice)?;
-                            }
+        invoice_dao.tx(|| {
+            for invoice in invoices {
+                match invoice_dao.get(invoice.id.clone()) {
+                    Ok(current) => {
+                        if current.should_update(&invoice) {
+                            invoice_dao.update(&invoice)?;
                         }
-                        Err(CoreError::NotFound) => {
-                            invoice_dao.insert(&invoice)?;
-                        }
-                        Err(_) => {}
                     }
+                    Err(CoreError::NotFound) => {
+                        invoice_dao.insert(&invoice)?;
+                    }
+                    Err(_) => {}
                 }
-                Ok(())
-            })
-            .map_err(CoreError::from)?;
+            }
+            Ok(())
+        })?;
     }
 
     Ok(())

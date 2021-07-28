@@ -366,6 +366,9 @@ name = "app-batch"
 version = "0.1.0"
 dependencies = [
  "app-core",
+ "chrono",
+ "dotenv",
+ "tokio",
 ]
 
 [[package]]

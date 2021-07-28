@@ -1,4 +1,6 @@
+use crate::ddb::schema::suppliers;
 use crate::ddb::schema::users;
+use crate::ddb::supplier;
 use crate::ddb::Dao;
 use crate::domain;
 use crate::{CoreError, CoreResult};
@@ -39,6 +41,36 @@ impl From<domain::user::User> for Entity {
 }
 
 impl Dao<domain::user::User> {
+    pub fn get_all_with_suppliers(
+        &self,
+    ) -> CoreResult<Vec<(domain::user::User, Vec<domain::supplier::Supplier>)>> {
+        let user_entities = users::table
+            .order(users::created_at.desc())
+            .load::<Entity>(&self.conn)
+            .map_err(CoreError::from)?;
+
+        let supplier_entities = supplier::Entity::belonging_to(&user_entities)
+            .order(suppliers::created_at.desc())
+            .load::<supplier::Entity>(&self.conn)
+            .map_err(CoreError::from)?
+            .grouped_by(&user_entities);
+
+        let zipped = user_entities
+            .into_iter()
+            .zip(supplier_entities)
+            .map(|v: (Entity, Vec<supplier::Entity>)| {
+                (
+                    domain::user::User::try_from(v.0).unwrap(),
+                    v.1.into_iter()
+                        .map(|v| domain::supplier::Supplier::try_from(v).unwrap())
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        Ok(zipped)
+    }
+
     pub fn get(&self, id: String) -> CoreResult<domain::user::User> {
         users::table
             .find(id)

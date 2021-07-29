@@ -4,3 +4,4 @@ gcp.prod.json
 firebase.prod.json
 .env.local
 .env.prod
+.env.batch.prod

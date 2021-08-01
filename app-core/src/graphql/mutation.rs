@@ -96,9 +96,11 @@ impl MutationFields for Mutation {
             .map_err(FieldError::from)?;
 
         let mut contact_id = "".to_string();
+        let mut contact_group_id = "".to_string();
         for contact in contacts {
             if contact.recipient_name.unwrap_or("".to_string()) == name {
-                contact_id = contact.contact_group_id.unwrap_or(0).to_string();
+                contact_id = contact.id.unwrap().to_string();
+                contact_group_id = contact.contact_group_id.unwrap().to_string();
                 break;
             }
         }
@@ -112,7 +114,8 @@ impl MutationFields for Mutation {
                 .await
                 .map_err(FieldError::from)?;
 
-            contact_id = contact.contact_group_id.unwrap().to_string()
+            contact_id = contact.id.unwrap().to_string();
+            contact_group_id = contact.contact_group_id.unwrap().to_string();
         }
 
         let supplier = supplier_dao
@@ -120,6 +123,7 @@ impl MutationFields for Mutation {
                 let supplier = domain::supplier::Supplier::new(
                     authorized_user_id,
                     contact_id,
+                    contact_group_id,
                     name,
                     billing_amount,
                     billing_type,
@@ -174,9 +178,11 @@ impl MutationFields for Mutation {
             .map_err(FieldError::from)?;
 
         let mut contact_id = "".to_string();
+        let mut contact_group_id = "".to_string();
         for contact in contacts {
             if contact.recipient_name.unwrap_or("".to_string()) == name {
-                contact_id = contact.contact_group_id.unwrap_or(0).to_string();
+                contact_id = contact.id.unwrap().to_string();
+                contact_group_id = contact.contact_group_id.unwrap().to_string();
                 break;
             }
         }
@@ -192,7 +198,14 @@ impl MutationFields for Mutation {
                     return Err(CoreError::Forbidden);
                 }
 
-                supplier.update(contact_id, name, billing_amount, subject, now);
+                supplier.update(
+                    contact_id,
+                    contact_group_id,
+                    name,
+                    billing_amount,
+                    subject,
+                    now,
+                );
                 supplier_dao.update(&supplier)?;
                 Ok(supplier)
             })

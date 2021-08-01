@@ -3,6 +3,7 @@ ROOT := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 export PATH := $(ROOT)/scripts:$(PATH)
 
 IMAGE := ""
+TASK := ""
 
 run-api:
 	RUST_ENV=$(PWD)/.env.local \
@@ -10,11 +11,11 @@ run-api:
 	GOOGLE_APPLICATION_CREDENTIALS=$(PWD)/gcp.prod.json \
  	cargo run --bin app-api
 
-run-batch-sync-invoice:
+run-batch:
 	RUST_ENV=$(PWD)/.env.local \
 	FIREBASE_CREDENTIALS=$(PWD)/firebase.prod.json \
 	GOOGLE_APPLICATION_CREDENTIALS=$(PWD)/gcp.prod.json \
- 	cargo run --bin app-batch sync-invoice
+ 	cargo run --bin app-batch $(TASK)
 
 build-api:
 	cargo build --bin app-api

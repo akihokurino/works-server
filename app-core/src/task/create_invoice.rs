@@ -35,32 +35,18 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         })?;
 
         for supplier in suppliers {
-            let invoices = misoca_cli
-                .get_invoices(misoca::invoice::get_invoices::Input {
+            let invoice = misoca_cli
+                .create_invoice(misoca::invoice::create_invoice::Input {
                     access_token: access_token.clone(),
-                    page: 1,
-                    per_page: 100,
                     supplier_id: supplier.id.clone(),
-                    contact_group_id: supplier.contact_group_id.clone(),
+                    contact_id: supplier.contact_id.clone(),
+                    subject: supplier.subject.clone(),
+                    billing_amount: supplier.billing_amount.clone(),
+                    now,
                 })
                 .await?;
 
-            invoice_dao.tx(|| {
-                for invoice in invoices {
-                    match invoice_dao.get(invoice.id.clone()) {
-                        Ok(current) => {
-                            if current.should_update(&invoice) {
-                                invoice_dao.update(&invoice)?;
-                            }
-                        }
-                        Err(CoreError::NotFound) => {
-                            invoice_dao.insert(&invoice)?;
-                        }
-                        Err(_) => {}
-                    }
-                }
-                Ok(())
-            })?;
+            invoice_dao.insert(&invoice)?;
         }
     }
 

@@ -22,6 +22,8 @@ async fn main() {
 
     let result = if command == "sync-invoice" {
         task::sync_invoice::exec(misoca_cli, now).await
+    } else if command == "create-invoice" {
+        task::create_invoice::exec(misoca_cli, now).await
     } else {
         Err(CoreError::Internal("unknown command".to_string()))
     };

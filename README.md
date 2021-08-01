@@ -34,9 +34,29 @@ curl --location --request POST 'https://app.misoca.jp/oauth2/token' \
     "refresh_token": "MGFqzUdlBRWl-WmyfevZcctHiSTkT-SAmlQty4EUBLs"
 }'
 
+curl --location --request GET 'https://app.misoca.jp/api/v3/contacts' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: bearer '
+
 curl --location --request GET 'https://app.misoca.jp/api/v3/invoices' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: bearer '
+
+curl --location --request POST 'https://app.misoca.jp/api/v3/invoice' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: bearer ' \
+--data '{
+  "issue_date":"2021-08-01",
+  "subject":"システム開発委託 (8月分)",
+  "payment_due_on":"2021-08-31",
+  "contact_id":2200514,
+  "items":[{
+    "name":"システム開発委託",
+    "quantity":1,
+    "unit_price":200000,
+    "tax_type":"STANDARD_TAX_10"
+  }]
+}'
 ```
 
 

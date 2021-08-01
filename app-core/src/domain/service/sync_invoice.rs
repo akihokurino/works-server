@@ -21,7 +21,7 @@ pub async fn exec(
                 page: 1,
                 per_page: 100,
                 supplier_id: supplier.id.clone(),
-                contact_id: supplier.contact_id.clone(),
+                contact_group_id: supplier.contact_group_id.clone(),
             })
             .await?;
 

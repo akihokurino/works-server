@@ -4,6 +4,7 @@ use crate::misoca::{CallInput, Client};
 use crate::util;
 use crate::{CoreError, CoreResult};
 use actix_web::web::Bytes;
+use chrono::{Datelike, Duration, NaiveDate};
 use reqwest::{Method, Response};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -23,7 +24,10 @@ impl Client {
         let query = vec![
             ("page".to_string(), input.page.to_string()),
             ("per_page".to_string(), input.per_page.to_string()),
-            ("contact_group_id".to_string(), input.contact_id.to_string()),
+            (
+                "contact_group_id".to_string(),
+                input.contact_group_id.to_string(),
+            ),
         ];
 
         self.call(
@@ -64,6 +68,82 @@ impl Client {
         let bytes = resp.bytes().await.map_err(CoreError::from)?;
         Ok(bytes)
     }
+
+    pub async fn create_invoice(
+        &self,
+        input: create_invoice::Input,
+    ) -> CoreResult<domain::invoice::Invoice> {
+        #[derive(Debug, Serialize)]
+        struct ItemBody {
+            pub name: String,
+            pub quantity: i32,
+            pub unit_price: i32,
+            pub tax_type: String,
+            pub excluding_withholding_tax: bool,
+        }
+
+        #[derive(Debug, Serialize)]
+        struct Body {
+            pub issue_date: String,
+            pub subject: String,
+            pub payment_due_on: String,
+            pub contact_id: i32,
+            pub items: Vec<ItemBody>,
+        }
+
+        let issue_date = input.now.format("%Y-%m-%d").to_string();
+        let first_day_in_next_month =
+            NaiveDate::from_ymd(input.now.year(), input.now.month() + 1, 1);
+        let last_day_in_month = first_day_in_next_month - Duration::hours(24);
+        let payment_due_on = last_day_in_month.format("%Y-%m-%d").to_string();
+        let first_day_in_last_month =
+            NaiveDate::from_ymd(input.now.year(), input.now.month() - 1, 1);
+
+        println!("発行日: {}", issue_date);
+        println!("支払い期日: {}", payment_due_on);
+
+        let body = Body {
+            issue_date,
+            subject: format!(
+                "{} ({}月分)",
+                input.subject.clone(),
+                first_day_in_last_month.month()
+            ),
+            payment_due_on,
+            contact_id: input.contact_id.parse().unwrap(),
+            items: vec![ItemBody {
+                name: input.subject.to_string(),
+                quantity: 1,
+                unit_price: input.billing_amount.clone(),
+                tax_type: "STANDARD_TAX_10".to_string(),
+                excluding_withholding_tax: false,
+            }],
+        };
+
+        println!("json body: {}", serde_json::to_string(&body).unwrap());
+
+        let query = vec![];
+
+        self.call(
+            CallInput {
+                method: Method::POST,
+                path: "/api/v3/invoice".to_string(),
+                body: Some(
+                    serde_json::to_string(&body)
+                        .map_err(|e| CoreError::Internal(e.to_string()))?
+                        .into(),
+                ),
+                query,
+            },
+            input.access_token.clone(),
+        )
+        .await?
+        .error_for_status()?
+        .json::<create_invoice::Output>()
+        .await
+        .map_err(CoreError::from)
+        .map(|item| item.to_domain(input.supplier_id.clone()).unwrap())
+    }
 }
 
 pub mod get_invoices {
@@ -75,10 +155,39 @@ pub mod get_invoices {
         pub page: i32,
         pub per_page: i32,
         pub supplier_id: String,
-        pub contact_id: String,
+        pub contact_group_id: String,
     }
 
     pub type Output = Vec<Invoice>;
+}
+
+pub mod get_pdf {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub invoice_id: String,
+    }
+
+    pub type Output = Bytes;
+}
+
+pub mod create_invoice {
+    use super::*;
+    use chrono::{DateTime, Utc};
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub supplier_id: String,
+        pub contact_id: String,
+        pub subject: String,
+        pub billing_amount: i32,
+        pub now: DateTime<Utc>,
+    }
+
+    pub type Output = Invoice;
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -152,16 +261,4 @@ impl Invoice {
             updated_at: updated_at.naive_utc(),
         })
     }
-}
-
-pub mod get_pdf {
-    use super::*;
-
-    #[derive(Debug, Serialize)]
-    pub struct Input {
-        pub access_token: String,
-        pub invoice_id: String,
-    }
-
-    pub type Output = Bytes;
 }

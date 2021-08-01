@@ -8,6 +8,7 @@ pub struct Supplier {
     pub id: String,
     pub user_id: String,
     pub contact_id: String,
+    pub contact_group_id: String,
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: BillingType,
@@ -20,6 +21,7 @@ impl Supplier {
     pub fn new(
         user_id: String,
         contact_id: String,
+        contact_group_id: String,
         name: String,
         billing_amount: i32,
         billing_type: BillingType,
@@ -30,6 +32,7 @@ impl Supplier {
             id: Uuid::new_v4().to_string(),
             user_id,
             contact_id,
+            contact_group_id,
             name,
             billing_amount,
             billing_type,
@@ -42,12 +45,14 @@ impl Supplier {
     pub fn update(
         &mut self,
         contact_id: String,
+        contact_group_id: String,
         name: String,
         billing_amount: i32,
         subject: String,
         now: DateTime<Utc>,
     ) {
         self.contact_id = contact_id;
+        self.contact_group_id = contact_group_id;
         self.name = name;
         self.billing_amount = billing_amount;
         self.subject = subject;

@@ -60,7 +60,9 @@ impl MutationFields for Mutation {
         input: CreateSupplierInput,
     ) -> FieldResult<Supplier> {
         let ctx = exec.context();
+        let user_dao = ctx.ddb_dao::<domain::user::User>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
@@ -74,11 +76,37 @@ impl MutationFields for Mutation {
             GraphQLBillingType::OneTime => domain::supplier::BillingType::OneTime,
         };
 
+        let access_token = domain::service::get_misoca_token::exec(
+            user_dao,
+            misoca_cli.clone(),
+            authorized_user_id.clone(),
+            now,
+        )
+        .await
+        .map_err(FieldError::from)?;
+
+        let contacts = misoca_cli
+            .get_contacts(misoca::contact::get_contacts::Input {
+                access_token: access_token.clone(),
+                page: 1,
+                per_page: 100,
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        let mut contact_id = "".to_string();
+        for contact in contacts {
+            if contact.recipient_name.unwrap_or("".to_string()) == name {
+                contact_id = contact.contact_group_id.unwrap_or(0).to_string();
+                break;
+            }
+        }
+
         let supplier = supplier_dao
             .tx(|| {
                 let supplier = domain::supplier::Supplier::new(
                     authorized_user_id,
-                    "TODO".to_string(),
+                    contact_id,
                     name,
                     billing_amount,
                     billing_type,
@@ -121,6 +149,23 @@ impl MutationFields for Mutation {
         .await
         .map_err(FieldError::from)?;
 
+        let contacts = misoca_cli
+            .get_contacts(misoca::contact::get_contacts::Input {
+                access_token: access_token.clone(),
+                page: 1,
+                per_page: 100,
+            })
+            .await
+            .map_err(FieldError::from)?;
+
+        let mut contact_id = "".to_string();
+        for contact in contacts {
+            if contact.recipient_name.unwrap_or("".to_string()) == name {
+                contact_id = contact.contact_group_id.unwrap_or(0).to_string();
+                break;
+            }
+        }
+
         let supplier = supplier_dao
             .tx(|| {
                 let mut supplier = supplier_dao.get(id.clone())?;
@@ -128,7 +173,7 @@ impl MutationFields for Mutation {
                     return Err(CoreError::Forbidden);
                 }
 
-                supplier.update(name, billing_amount, now);
+                supplier.update(contact_id, name, billing_amount, now);
                 supplier_dao.update(&supplier)?;
                 Ok(supplier)
             })

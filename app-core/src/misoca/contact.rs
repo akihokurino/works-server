@@ -55,8 +55,8 @@ pub mod get_contacts {
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Contact {
-        pub id: String,
-        pub contact_group_id: String,
-        pub recipient_name: String,
+        pub id: Option<i32>,
+        pub contact_group_id: Option<i32>,
+        pub recipient_name: Option<String>,
     }
 }

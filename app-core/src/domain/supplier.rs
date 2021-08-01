@@ -36,7 +36,14 @@ impl Supplier {
         }
     }
 
-    pub fn update(&mut self, name: String, billing_amount: i32, now: DateTime<Utc>) {
+    pub fn update(
+        &mut self,
+        contact_id: String,
+        name: String,
+        billing_amount: i32,
+        now: DateTime<Utc>,
+    ) {
+        self.contact_id = contact_id;
         self.name = name;
         self.billing_amount = billing_amount;
         self.updated_at = now.naive_utc();

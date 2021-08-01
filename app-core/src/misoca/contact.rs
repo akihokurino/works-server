@@ -39,6 +39,43 @@ impl Client {
         .await
         .map_err(CoreError::from)
     }
+
+    pub async fn create_contact(
+        &self,
+        input: create_contact::Input,
+    ) -> CoreResult<create_contact::Output> {
+        #[derive(Debug, Serialize)]
+        struct Body {
+            pub recipient_name: String,
+        }
+
+        let body = Body {
+            recipient_name: input.name,
+        };
+
+        println!("json body: {}", serde_json::to_string(&body).unwrap());
+
+        let query = vec![];
+
+        self.call(
+            CallInput {
+                method: Method::POST,
+                path: "/api/v3/contact".to_string(),
+                body: Some(
+                    serde_json::to_string(&body)
+                        .map_err(|e| CoreError::Internal(e.to_string()))?
+                        .into(),
+                ),
+                query,
+            },
+            input.access_token,
+        )
+        .await?
+        .error_for_status()?
+        .json::<create_contact::Output>()
+        .await
+        .map_err(CoreError::from)
+    }
 }
 
 pub mod get_contacts {
@@ -55,6 +92,23 @@ pub mod get_contacts {
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Contact {
+        pub id: Option<i32>,
+        pub contact_group_id: Option<i32>,
+        pub recipient_name: Option<String>,
+    }
+}
+
+pub mod create_contact {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub name: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Output {
         pub id: Option<i32>,
         pub contact_group_id: Option<i32>,
         pub recipient_name: Option<String>,

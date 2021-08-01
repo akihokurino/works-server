@@ -102,6 +102,18 @@ impl MutationFields for Mutation {
             }
         }
 
+        if contact_id == "" {
+            let contact = misoca_cli
+                .create_contact(misoca::contact::create_contact::Input {
+                    access_token: access_token.clone(),
+                    name: name.clone(),
+                })
+                .await
+                .map_err(FieldError::from)?;
+
+            contact_id = contact.contact_group_id.unwrap().to_string()
+        }
+
         let supplier = supplier_dao
             .tx(|| {
                 let supplier = domain::supplier::Supplier::new(
@@ -164,6 +176,10 @@ impl MutationFields for Mutation {
                 contact_id = contact.contact_group_id.unwrap_or(0).to_string();
                 break;
             }
+        }
+
+        if contact_id == "" {
+            return Err(FieldError::from("not found misoca contact"));
         }
 
         let supplier = supplier_dao

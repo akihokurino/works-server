@@ -12,7 +12,6 @@ impl Client {
     pub async fn get_invoices(
         &self,
         input: get_invoices::Input,
-        supplier: &domain::supplier::Supplier,
     ) -> CoreResult<Vec<domain::invoice::Invoice>> {
         #[derive(Debug, Serialize)]
         struct Body {}
@@ -24,7 +23,7 @@ impl Client {
         let query = vec![
             ("page".to_string(), input.page.to_string()),
             ("per_page".to_string(), input.per_page.to_string()),
-            ("condition".to_string(), supplier.name.to_string()),
+            ("contact_group_id".to_string(), input.contact_id.to_string()),
         ];
 
         self.call(
@@ -38,7 +37,7 @@ impl Client {
                 ),
                 query,
             },
-            input.access_token,
+            input.access_token.clone(),
         )
         .await?
         .error_for_status()?
@@ -47,7 +46,7 @@ impl Client {
         .map_err(CoreError::from)
         .map(|item| {
             item.into_iter()
-                .map(|v| v.to_domain(supplier).unwrap())
+                .map(|v| v.to_domain(input.supplier_id.clone()).unwrap())
                 .collect::<Vec<_>>()
         })
     }
@@ -75,6 +74,8 @@ pub mod get_invoices {
         pub access_token: String,
         pub page: i32,
         pub per_page: i32,
+        pub supplier_id: String,
+        pub contact_id: String,
     }
 
     pub type Output = Vec<Invoice>;
@@ -102,10 +103,7 @@ pub struct InvoiceBody {
 }
 
 impl Invoice {
-    fn to_domain(
-        &self,
-        supplier: &domain::supplier::Supplier,
-    ) -> CoreResult<domain::invoice::Invoice> {
+    fn to_domain(&self, supplier_id: String) -> CoreResult<domain::invoice::Invoice> {
         let body = self.body.as_ref().unwrap();
 
         let total_amount: f64 = body
@@ -135,7 +133,7 @@ impl Invoice {
 
         Ok(domain::invoice::Invoice {
             id: String::from(self.id.unwrap().to_string()),
-            supplier_id: supplier.id.clone(),
+            supplier_id,
             issue_ymd,
             payment_due_on_ymd,
             invoice_number: self.invoice_number.clone().unwrap_or("".to_string()),

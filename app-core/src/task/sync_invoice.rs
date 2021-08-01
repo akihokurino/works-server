@@ -36,14 +36,13 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
 
         for supplier in suppliers {
             let invoices = misoca_cli
-                .get_invoices(
-                    misoca::invoice::get_invoices::Input {
-                        access_token: access_token.clone(),
-                        page: 1,
-                        per_page: 100,
-                    },
-                    &supplier,
-                )
+                .get_invoices(misoca::invoice::get_invoices::Input {
+                    access_token: access_token.clone(),
+                    page: 1,
+                    per_page: 100,
+                    supplier_id: supplier.id.clone(),
+                    contact_id: supplier.contact_id.clone(),
+                })
                 .await?;
 
             invoice_dao.tx(|| {

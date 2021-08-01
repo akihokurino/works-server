@@ -4,7 +4,6 @@ use crate::misoca::{CallInput, Client};
 use crate::util;
 use crate::{CoreError, CoreResult};
 use actix_web::web::Bytes;
-use chrono::{Datelike, Duration, NaiveDate};
 use reqwest::{Method, Response};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -91,28 +90,13 @@ impl Client {
             pub items: Vec<ItemBody>,
         }
 
-        let issue_date = input.now.format("%Y-%m-%d").to_string();
-        let first_day_in_next_month =
-            NaiveDate::from_ymd(input.now.year(), input.now.month() + 1, 1);
-        let last_day_in_month = first_day_in_next_month - Duration::hours(24);
-        let payment_due_on = last_day_in_month.format("%Y-%m-%d").to_string();
-        let first_day_in_last_month =
-            NaiveDate::from_ymd(input.now.year(), input.now.month() - 1, 1);
-
-        println!("発行日: {}", issue_date);
-        println!("支払い期日: {}", payment_due_on);
-
         let body = Body {
-            issue_date,
-            subject: format!(
-                "{} ({}月分)",
-                input.subject.clone(),
-                first_day_in_last_month.month()
-            ),
-            payment_due_on,
+            issue_date: input.issue_date.clone(),
+            subject: input.subject.clone(),
+            payment_due_on: input.payment_due_on.clone(),
             contact_id: input.contact_id.parse().unwrap(),
             items: vec![ItemBody {
-                name: input.subject.to_string(),
+                name: input.subject.clone(),
                 quantity: 1,
                 unit_price: input.billing_amount.clone(),
                 tax_type: "STANDARD_TAX_10".to_string(),
@@ -183,6 +167,8 @@ pub mod create_invoice {
         pub supplier_id: String,
         pub contact_id: String,
         pub subject: String,
+        pub issue_date: String,
+        pub payment_due_on: String,
         pub billing_amount: i32,
         pub now: DateTime<Utc>,
     }

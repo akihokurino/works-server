@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use uuid::Uuid;
 
 const CONSUMPTION_TAX_RATE: f64 = 0.1;
@@ -63,6 +63,23 @@ impl Supplier {
         let tmp =
             f64::from(self.billing_amount) + f64::from(self.billing_amount) * CONSUMPTION_TAX_RATE;
         tmp.floor() as i32
+    }
+
+    pub fn subject_in_this_month(&self, now: DateTime<Utc>) -> String {
+        let first_day_in_last_month = NaiveDate::from_ymd(now.year(), now.month() - 1, 1);
+        format!(
+            "{} ({}月分)",
+            self.subject.clone(),
+            first_day_in_last_month.month()
+        )
+    }
+
+    pub fn payment_date_in_this_month(&self, now: DateTime<Utc>) -> (String, String) {
+        let issue_date = now.format("%Y-%m-%d").to_string();
+        let first_day_in_next_month = NaiveDate::from_ymd(now.year(), now.month() + 1, 1);
+        let last_day_in_month = first_day_in_next_month - Duration::hours(24);
+        let payment_due_on = last_day_in_month.format("%Y-%m-%d").to_string();
+        return (issue_date, payment_due_on);
     }
 }
 

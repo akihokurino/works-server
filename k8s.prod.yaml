@@ -164,3 +164,61 @@ spec:
             - name: batch-env
               secret:
                 secretName: batch-env
+
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: create-invoice
+spec:
+  schedule: "0 10 1 * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  suspend: false
+  jobTemplate:
+    spec:
+      completions: 1
+      parallelism: 1
+      backoffLimit: 1
+      template:
+        metadata:
+          name: create-invoice
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: create-invoice-container
+              image: ${IMAGE}
+              command: [
+                  "sh",
+                  "-c",
+                  "/app/target/release/app-batch create-invoice"
+              ]
+              env:
+                - name: RUST_ENV
+                  value: /var/secrets/batch-env
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: /var/secrets/gcp/credentials.json
+                - name: FIREBASE_CREDENTIALS
+                  value: /var/secrets/firebase/credentials.json
+              volumeMounts:
+                - name: gcp-credentials
+                  mountPath: /var/secrets/gcp
+                  readOnly: true
+                - name: firebase-credentials
+                  mountPath: /var/secrets/firebase
+                  readOnly: true
+                - name: batch-env
+                  mountPath: /var/secrets
+                  readOnly: true
+          volumes:
+            - name: gcp-credentials
+              secret:
+                secretName: gcp-credentials
+            - name: firebase-credentials
+              secret:
+                secretName: firebase-credentials
+            - name: batch-env
+              secret:
+                secretName: batch-env

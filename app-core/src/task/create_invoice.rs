@@ -35,12 +35,30 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         })?;
 
         for supplier in suppliers {
+            let subject = supplier.subject_in_this_month(now).clone();
+            let (issue_date, payment_due_on) = supplier.payment_date_in_this_month(now);
+
+            println!("請求先: {}", supplier.name.clone());
+            println!("発行日: {}", issue_date);
+            println!("支払い期日: {}", payment_due_on);
+
+            let exist = invoice_dao.exist_by_subject(supplier.id.clone(), subject.clone())?;
+            if exist {
+                println!(
+                    "請求先[{}]の請求書はすでに存在します",
+                    supplier.name.clone()
+                );
+                continue;
+            }
+
             let invoice = misoca_cli
                 .create_invoice(misoca::invoice::create_invoice::Input {
                     access_token: access_token.clone(),
                     supplier_id: supplier.id.clone(),
                     contact_id: supplier.contact_id.clone(),
-                    subject: supplier.subject.clone(),
+                    subject,
+                    issue_date,
+                    payment_due_on,
                     billing_amount: supplier.billing_amount.clone(),
                     now,
                 })

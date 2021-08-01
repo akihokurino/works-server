@@ -3,6 +3,7 @@ use crate::ddb::supplier;
 use crate::ddb::Dao;
 use crate::domain;
 use crate::{CoreError, CoreResult};
+use diesel::dsl::*;
 use diesel::prelude::*;
 use std::convert::TryFrom;
 use std::str::FromStr;
@@ -102,6 +103,18 @@ impl Dao<domain::invoice::Invoice> {
             .first(&self.conn)
             .map(|v: Entity| domain::invoice::Invoice::try_from(v).unwrap())
             .map_err(CoreError::from)
+    }
+
+    pub fn exist_by_subject(&self, supplier_id: String, subject: String) -> CoreResult<bool> {
+        select(exists(
+            invoices::table.filter(
+                invoices::subject
+                    .eq(subject)
+                    .and(invoices::supplier_id.eq(supplier_id)),
+            ),
+        ))
+        .get_result(&self.conn)
+        .map_err(CoreError::from)
     }
 
     pub fn insert(&self, item: &domain::invoice::Invoice) -> CoreResult<()> {

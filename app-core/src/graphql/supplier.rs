@@ -30,6 +30,10 @@ impl SupplierFields for Supplier {
             domain::supplier::BillingType::OneTime => GraphQLBillingType::OneTime,
         })
     }
+
+    fn field_subject(&self, _: &Executor<Context>) -> FieldResult<String> {
+        Ok(self.supplier.subject.clone())
+    }
 }
 
 #[derive(Debug, Clone)]

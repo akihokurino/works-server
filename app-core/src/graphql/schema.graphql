@@ -42,6 +42,7 @@ type Supplier implements Node {
     billingAmountIncludeTax: Int! @juniper(ownership: "owned")
     billingAmountExcludeTax: Int! @juniper(ownership: "owned")
     billingType: GraphQLBillingType! @juniper(ownership: "owned")
+    subject: String! @juniper(ownership: "owned")
 }
 
 type SupplierEdge {
@@ -92,12 +93,14 @@ input CreateSupplierInput {
     name: String!
     billingAmount: Int!
     billingType: GraphQLBillingType!
+    subject: String!
 }
 
 input UpdateSupplierInput {
     id: String!
     name: String!
     billingAmount: Int!
+    subject: String!
 }
 
 input DeleteSupplierInput {

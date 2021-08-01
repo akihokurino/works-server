@@ -11,6 +11,7 @@ pub struct Supplier {
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: BillingType,
+    pub subject: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -22,6 +23,7 @@ impl Supplier {
         name: String,
         billing_amount: i32,
         billing_type: BillingType,
+        subject: String,
         now: DateTime<Utc>,
     ) -> Self {
         Supplier {
@@ -31,6 +33,7 @@ impl Supplier {
             name,
             billing_amount,
             billing_type,
+            subject,
             created_at: now.naive_utc(),
             updated_at: now.naive_utc(),
         }
@@ -41,11 +44,13 @@ impl Supplier {
         contact_id: String,
         name: String,
         billing_amount: i32,
+        subject: String,
         now: DateTime<Utc>,
     ) {
         self.contact_id = contact_id;
         self.name = name;
         self.billing_amount = billing_amount;
+        self.subject = subject;
         self.updated_at = now.naive_utc();
     }
 

@@ -70,6 +70,7 @@ impl MutationFields for Mutation {
 
         let now: DateTime<Utc> = Utc::now();
         let name = input.name;
+        let subject = input.subject;
         let billing_amount = input.billing_amount;
         let billing_type = match input.billing_type {
             GraphQLBillingType::Monthly => domain::supplier::BillingType::Monthly,
@@ -122,6 +123,7 @@ impl MutationFields for Mutation {
                     name,
                     billing_amount,
                     billing_type,
+                    subject,
                     now,
                 );
                 supplier_dao.insert(&supplier)?;
@@ -150,6 +152,7 @@ impl MutationFields for Mutation {
         let now: DateTime<Utc> = Utc::now();
         let id = input.id;
         let name = input.name;
+        let subject = input.subject;
         let billing_amount = input.billing_amount;
 
         let access_token = domain::service::get_misoca_token::exec(
@@ -189,7 +192,7 @@ impl MutationFields for Mutation {
                     return Err(CoreError::Forbidden);
                 }
 
-                supplier.update(contact_id, name, billing_amount, now);
+                supplier.update(contact_id, name, billing_amount, subject, now);
                 supplier_dao.update(&supplier)?;
                 Ok(supplier)
             })

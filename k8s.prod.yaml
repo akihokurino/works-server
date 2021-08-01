@@ -171,7 +171,7 @@ kind: CronJob
 metadata:
   name: create-invoice
 spec:
-  schedule: "0 10 1 * *"
+  schedule: "30 10 1 * *"
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 300
   successfulJobsHistoryLimit: 5

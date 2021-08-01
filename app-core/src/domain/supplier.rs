@@ -7,6 +7,7 @@ const CONSUMPTION_TAX_RATE: f64 = 0.1;
 pub struct Supplier {
     pub id: String,
     pub user_id: String,
+    pub contact_id: String,
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: BillingType,
@@ -17,6 +18,7 @@ pub struct Supplier {
 impl Supplier {
     pub fn new(
         user_id: String,
+        contact_id: String,
         name: String,
         billing_amount: i32,
         billing_type: BillingType,
@@ -25,6 +27,7 @@ impl Supplier {
         Supplier {
             id: Uuid::new_v4().to_string(),
             user_id,
+            contact_id,
             name,
             billing_amount,
             billing_type,

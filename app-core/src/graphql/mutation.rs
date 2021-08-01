@@ -78,6 +78,7 @@ impl MutationFields for Mutation {
             .tx(|| {
                 let supplier = domain::supplier::Supplier::new(
                     authorized_user_id,
+                    "TODO".to_string(),
                     name,
                     billing_amount,
                     billing_type,
@@ -98,7 +99,9 @@ impl MutationFields for Mutation {
         input: UpdateSupplierInput,
     ) -> FieldResult<Supplier> {
         let ctx = exec.context();
+        let user_dao = ctx.ddb_dao::<domain::user::User>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
@@ -108,6 +111,15 @@ impl MutationFields for Mutation {
         let id = input.id;
         let name = input.name;
         let billing_amount = input.billing_amount;
+
+        let access_token = domain::service::get_misoca_token::exec(
+            user_dao,
+            misoca_cli.clone(),
+            authorized_user_id.clone(),
+            now,
+        )
+        .await
+        .map_err(FieldError::from)?;
 
         let supplier = supplier_dao
             .tx(|| {
@@ -221,35 +233,20 @@ impl MutationFields for Mutation {
 
         let now: DateTime<Utc> = Utc::now();
 
-        let mut user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
-
-        if user.misoca_refresh_token.is_empty() {
-            return Err(FieldError::from("you should connect misoca"));
-        }
-
-        let tokens = misoca_cli
-            .refresh_tokens(misoca::tokens::refresh_tokens::Input {
-                refresh_token: user.misoca_refresh_token.clone(),
-            })
-            .await
-            .map_err(FieldError::from)?;
-
-        let access_token = tokens.access_token;
-        let refresh_token = tokens.refresh_token;
-
-        user.update_misoca_refresh_token(refresh_token, now);
-        user_dao
-            .tx(|| {
-                user_dao.update(&user)?;
-                Ok(())
-            })
-            .map_err(FieldError::from)?;
+        let access_token = domain::service::get_misoca_token::exec(
+            user_dao,
+            misoca_cli.clone(),
+            authorized_user_id.clone(),
+            now,
+        )
+        .await
+        .map_err(FieldError::from)?;
 
         domain::service::sync_invoice::exec(
             supplier_dao,
             invoice_dao,
             misoca_cli.clone(),
-            user.id.clone(),
+            authorized_user_id.clone(),
             access_token.clone(),
         )
         .await
@@ -275,7 +272,6 @@ impl MutationFields for Mutation {
         let now: DateTime<Utc> = Utc::now();
         let invoice_id = input.invoice_id;
 
-        let mut user = user_dao.get(authorized_user_id).map_err(FieldError::from)?;
         let mut invoice = invoice_dao
             .get(invoice_id.clone())
             .map_err(FieldError::from)?;
@@ -296,27 +292,14 @@ impl MutationFields for Mutation {
             }
         }
 
-        if user.misoca_refresh_token.is_empty() {
-            return Err(FieldError::from("you should connect misoca"));
-        }
-
-        let tokens = misoca_cli
-            .refresh_tokens(misoca::tokens::refresh_tokens::Input {
-                refresh_token: user.misoca_refresh_token.clone(),
-            })
-            .await
-            .map_err(FieldError::from)?;
-
-        let access_token = tokens.access_token;
-        let refresh_token = tokens.refresh_token;
-
-        user.update_misoca_refresh_token(refresh_token, now);
-        user_dao
-            .tx(|| {
-                user_dao.update(&user)?;
-                Ok(())
-            })
-            .map_err(FieldError::from)?;
+        let access_token = domain::service::get_misoca_token::exec(
+            user_dao,
+            misoca_cli.clone(),
+            authorized_user_id.clone(),
+            now,
+        )
+        .await
+        .map_err(FieldError::from)?;
 
         let data = misoca_cli
             .get_pdf(misoca::invoice::get_pdf::Input {

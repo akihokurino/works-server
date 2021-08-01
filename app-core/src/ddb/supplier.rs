@@ -14,6 +14,7 @@ use std::convert::TryFrom;
 pub struct Entity {
     pub id: String,
     pub user_id: String,
+    pub contact_id: String,
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: i32,
@@ -28,6 +29,7 @@ impl TryFrom<Entity> for domain::supplier::Supplier {
         Ok(domain::supplier::Supplier {
             id: e.id,
             user_id: e.user_id,
+            contact_id: e.contact_id,
             name: e.name,
             billing_amount: e.billing_amount,
             billing_type: domain::supplier::BillingType::from(e.billing_type),
@@ -42,6 +44,7 @@ impl From<domain::supplier::Supplier> for Entity {
         Entity {
             id: d.id,
             user_id: d.user_id,
+            contact_id: d.contact_id,
             name: d.name,
             billing_amount: d.billing_amount,
             billing_type: d.billing_type.int(),

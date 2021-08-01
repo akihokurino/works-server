@@ -1,3 +1,4 @@
+pub mod contact;
 pub mod invoice;
 pub mod tokens;
 

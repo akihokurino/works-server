@@ -11,6 +11,7 @@ table! {
     suppliers (id) {
         id -> Varchar,
         user_id -> Varchar,
+        contact_id -> Varchar,
         name -> Varchar,
         billing_amount -> Integer,
         billing_type -> Integer,

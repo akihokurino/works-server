@@ -17,7 +17,7 @@ pub async fn exec(
     for supplier in suppliers {
         let invoices = misoca_cli
             .get_invoices(
-                misoca::get_invoices::Input {
+                misoca::invoice::get_invoices::Input {
                     access_token: access_token.clone(),
                     page: 1,
                     per_page: 100,

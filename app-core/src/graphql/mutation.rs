@@ -177,7 +177,7 @@ impl MutationFields for Mutation {
         let mut user = user_dao.get(authorized_user_id)?;
 
         let tokens = misoca_cli
-            .get_tokens(misoca::get_tokens::Input { code })
+            .get_tokens(misoca::tokens::get_tokens::Input { code })
             .await
             .map_err(FieldError::from)?;
 
@@ -228,7 +228,7 @@ impl MutationFields for Mutation {
         }
 
         let tokens = misoca_cli
-            .refresh_tokens(misoca::refresh_tokens::Input {
+            .refresh_tokens(misoca::tokens::refresh_tokens::Input {
                 refresh_token: user.misoca_refresh_token.clone(),
             })
             .await
@@ -301,7 +301,7 @@ impl MutationFields for Mutation {
         }
 
         let tokens = misoca_cli
-            .refresh_tokens(misoca::refresh_tokens::Input {
+            .refresh_tokens(misoca::tokens::refresh_tokens::Input {
                 refresh_token: user.misoca_refresh_token.clone(),
             })
             .await
@@ -319,7 +319,7 @@ impl MutationFields for Mutation {
             .map_err(FieldError::from)?;
 
         let data = misoca_cli
-            .get_pdf(misoca::get_pdf::Input {
+            .get_pdf(misoca::invoice::get_pdf::Input {
                 access_token,
                 invoice_id: invoice.id.clone(),
             })

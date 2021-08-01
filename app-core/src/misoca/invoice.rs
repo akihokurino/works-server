@@ -1,0 +1,169 @@
+use crate::domain;
+use crate::domain::YMD;
+use crate::misoca::{CallInput, Client};
+use crate::util;
+use crate::{CoreError, CoreResult};
+use actix_web::web::Bytes;
+use reqwest::{Method, Response};
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
+impl Client {
+    pub async fn get_invoices(
+        &self,
+        input: get_invoices::Input,
+        supplier: &domain::supplier::Supplier,
+    ) -> CoreResult<Vec<domain::invoice::Invoice>> {
+        #[derive(Debug, Serialize)]
+        struct Body {}
+
+        let body = Body {};
+
+        println!("json body: {}", serde_json::to_string(&body).unwrap());
+
+        let query = vec![
+            ("page".to_string(), input.page.to_string()),
+            ("per_page".to_string(), input.per_page.to_string()),
+            ("condition".to_string(), supplier.name.to_string()),
+        ];
+
+        self.call(
+            CallInput {
+                method: Method::GET,
+                path: "/api/v3/invoices".to_string(),
+                body: Some(
+                    serde_json::to_string(&body)
+                        .map_err(|e| CoreError::Internal(e.to_string()))?
+                        .into(),
+                ),
+                query,
+            },
+            input.access_token,
+        )
+        .await?
+        .error_for_status()?
+        .json::<get_invoices::Output>()
+        .await
+        .map_err(CoreError::from)
+        .map(|item| {
+            item.into_iter()
+                .map(|v| v.to_domain(supplier).unwrap())
+                .collect::<Vec<_>>()
+        })
+    }
+
+    pub async fn get_pdf(&self, input: get_pdf::Input) -> CoreResult<get_pdf::Output> {
+        let client = reqwest::Client::new();
+        let mut url = self.service_base_url.clone();
+        url.set_path(format!("/api/v3/invoice/{}/pdf", input.invoice_id).as_str());
+        let resp: Response = client
+            .get(url)
+            .header("Authorization", format!("bearer {}", input.access_token))
+            .send()
+            .await
+            .map_err(CoreError::from)?;
+        let bytes = resp.bytes().await.map_err(CoreError::from)?;
+        Ok(bytes)
+    }
+}
+
+pub mod get_invoices {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub page: i32,
+        pub per_page: i32,
+    }
+
+    pub type Output = Vec<Invoice>;
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Invoice {
+    pub id: Option<i32>,
+    pub issue_date: Option<String>,
+    pub payment_due_on: Option<String>,
+    pub invoice_number: Option<String>,
+    pub payment_status: Option<i32>,
+    pub invoice_status: Option<i32>,
+    pub recipient_name: Option<String>,
+    pub subject: Option<String>,
+    pub body: Option<InvoiceBody>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InvoiceBody {
+    pub total_amount: Option<String>,
+    pub tax: Option<String>,
+}
+
+impl Invoice {
+    fn to_domain(
+        &self,
+        supplier: &domain::supplier::Supplier,
+    ) -> CoreResult<domain::invoice::Invoice> {
+        let body = self.body.as_ref().unwrap();
+
+        let total_amount: f64 = body
+            .total_amount
+            .clone()
+            .unwrap_or("0".to_string())
+            .parse()
+            .unwrap();
+        let tax: f64 = body.tax.clone().unwrap_or("0".to_string()).parse().unwrap();
+
+        let issue_ymd = YMD::from_str(self.issue_date.clone().unwrap_or("".to_string()).as_str())
+            .map_err(|_e| CoreError::Internal("cannot parse issue_date".to_string()))?;
+        let payment_due_on_ymd = YMD::from_str(
+            self.payment_due_on
+                .clone()
+                .unwrap_or("".to_string())
+                .as_str(),
+        )
+        .map_err(|_e| CoreError::Internal("cannot parse payment_due_on".to_string()))?;
+
+        let created_at =
+            chrono::DateTime::parse_from_rfc3339(self.created_at.clone().unwrap().as_str())
+                .map_err(|_e| CoreError::Internal("cannot parse created_at".to_string()))?;
+        let updated_at =
+            chrono::DateTime::parse_from_rfc3339(self.updated_at.clone().unwrap().as_str())
+                .map_err(|_e| CoreError::Internal("cannot parse updated_at".to_string()))?;
+
+        Ok(domain::invoice::Invoice {
+            id: String::from(self.id.unwrap().to_string()),
+            supplier_id: supplier.id.clone(),
+            issue_ymd,
+            payment_due_on_ymd,
+            invoice_number: self.invoice_number.clone().unwrap_or("".to_string()),
+            payment_status: domain::invoice::PaymentStatus::from(
+                self.payment_status.clone().unwrap_or(0),
+            ),
+            invoice_status: domain::invoice::InvoiceStatus::from(
+                self.invoice_status.clone().unwrap_or(0),
+            ),
+            recipient_name: self.recipient_name.clone().unwrap_or("".to_string()),
+            subject: self.subject.clone().unwrap_or("".to_string()),
+            total_amount: util::f64_to_i32(total_amount),
+            tax: util::f64_to_i32(tax),
+            pdf_path: None,
+            created_at: created_at.naive_utc(),
+            updated_at: updated_at.naive_utc(),
+        })
+    }
+}
+
+pub mod get_pdf {
+    use super::*;
+
+    #[derive(Debug, Serialize)]
+    pub struct Input {
+        pub access_token: String,
+        pub invoice_id: String,
+    }
+
+    pub type Output = Bytes;
+}

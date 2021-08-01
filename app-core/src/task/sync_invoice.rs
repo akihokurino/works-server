@@ -20,7 +20,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         }
 
         let tokens = misoca_cli
-            .refresh_tokens(misoca::refresh_tokens::Input {
+            .refresh_tokens(misoca::tokens::refresh_tokens::Input {
                 refresh_token: only_user.misoca_refresh_token.clone(),
             })
             .await?;
@@ -37,7 +37,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         for supplier in suppliers {
             let invoices = misoca_cli
                 .get_invoices(
-                    misoca::get_invoices::Input {
+                    misoca::invoice::get_invoices::Input {
                         access_token: access_token.clone(),
                         page: 1,
                         per_page: 100,

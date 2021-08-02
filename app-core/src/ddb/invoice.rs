@@ -101,7 +101,7 @@ impl Dao<domain::invoice::Invoice> {
     pub fn get(&self, conn: &MysqlConnection, id: String) -> CoreResult<domain::invoice::Invoice> {
         invoices::table
             .find(id)
-            .first(&self.conn)
+            .first(conn)
             .map(|v: Entity| domain::invoice::Invoice::try_from(v).unwrap())
             .map_err(CoreError::from)
     }

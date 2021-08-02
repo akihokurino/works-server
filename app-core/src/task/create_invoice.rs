@@ -1,4 +1,5 @@
 use crate::ddb;
+use crate::ddb::Tx;
 use crate::domain;
 use crate::misoca;
 use crate::{CoreError, CoreResult};
@@ -31,7 +32,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         let refresh_token = tokens.refresh_token;
 
         only_user.update_misoca_refresh_token(refresh_token, now);
-        user_dao.tx(&conn, || {
+        Tx::run(&conn, || {
             user_dao.update(&conn, &only_user)?;
             Ok(())
         })?;

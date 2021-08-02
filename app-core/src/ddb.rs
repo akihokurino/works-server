@@ -25,8 +25,12 @@ impl<T> Dao<T> {
             _phantom: PhantomData,
         }
     }
+}
 
-    pub fn tx<R, F>(&self, conn: &MysqlConnection, exec: F) -> CoreResult<R>
+pub struct Tx {}
+
+impl Tx {
+    pub fn run<R, F>(conn: &MysqlConnection, exec: F) -> CoreResult<R>
     where
         F: FnOnce() -> CoreResult<R>,
     {

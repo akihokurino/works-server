@@ -21,7 +21,7 @@ spec:
           command: [
               "sh",
               "-c",
-              "/app/target/release/app-api"
+              "/app/api"
           ]
           env:
             - name: RUST_ENV
@@ -135,7 +135,7 @@ spec:
               command: [
                   "sh",
                   "-c",
-                  "/app/target/release/app-batch sync-invoice"
+                  "/app/batch sync-invoice"
               ]
               env:
                 - name: RUST_ENV
@@ -193,7 +193,7 @@ spec:
               command: [
                   "sh",
                   "-c",
-                  "/app/target/release/app-batch create-invoice"
+                  "/app/batch create-invoice"
               ]
               env:
                 - name: RUST_ENV

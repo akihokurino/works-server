@@ -9,7 +9,7 @@ PROJECT=works-${ENV}
 gcloud config set project ${PROJECT}
 
 export IMAGE=gcr.io/${PROJECT}/app:${VER}
-docker build . -t ${IMAGE}
+docker build . -t ${IMAGE} --target deploy
 docker login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" https://gcr.io
 docker push ${IMAGE}
 

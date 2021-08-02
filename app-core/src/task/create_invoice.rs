@@ -1,9 +1,9 @@
 use crate::ddb;
-use crate::ddb::Tx;
 use crate::domain;
 use crate::misoca;
 use crate::{CoreError, CoreResult};
 use chrono::{DateTime, Utc};
+use std::sync::Mutex;
 
 pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<()> {
     let conn = ddb::establish_connection();
@@ -15,27 +15,17 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         .map_err(CoreError::from)?;
 
     for user in users {
-        let mut only_user = user.0;
+        let only_user = user.0;
         let suppliers = user.1;
 
-        if only_user.misoca_refresh_token.is_empty() {
-            continue;
-        }
-
-        let tokens = misoca_cli
-            .refresh_tokens(misoca::tokens::refresh_tokens::Input {
-                refresh_token: only_user.misoca_refresh_token.clone(),
-            })
-            .await?;
-
-        let access_token = tokens.access_token;
-        let refresh_token = tokens.refresh_token;
-
-        only_user.update_misoca_refresh_token(refresh_token, now);
-        Tx::run(&conn, || {
-            user_dao.update(&conn, &only_user)?;
-            Ok(())
-        })?;
+        let access_token = domain::service::get_misoca_token::exec(
+            Mutex::new(&conn),
+            user_dao.clone(),
+            misoca_cli.clone(),
+            only_user.id.clone(),
+            now,
+        )
+        .await?;
 
         for supplier in suppliers {
             let subject = supplier.subject_in_this_month(now).clone();

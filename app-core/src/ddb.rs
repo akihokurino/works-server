@@ -15,6 +15,7 @@ pub fn establish_connection() -> MysqlConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
+#[derive(Clone)]
 pub struct Dao<T> {
     _phantom: PhantomData<fn() -> T>,
 }

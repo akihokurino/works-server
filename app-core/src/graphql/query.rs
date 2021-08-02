@@ -15,7 +15,7 @@ impl QueryFields for Query {
         _: &QueryTrail<'r, Me, Walked>,
     ) -> FieldResult<Me> {
         let ctx = exec.context();
-        let conn = &ddb::establish_connection();
+        let conn = ddb::establish_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let authorized_user_id = ctx
             .authorized_user_id
@@ -23,7 +23,7 @@ impl QueryFields for Query {
             .ok_or(FieldError::from("unauthorized"))?;
 
         let user = user_dao
-            .get(conn, authorized_user_id)
+            .get(&conn, authorized_user_id)
             .map_err(FieldError::from)?;
 
         Ok(Me { user })
@@ -36,7 +36,7 @@ impl QueryFields for Query {
         input: GetInvoiceListInput,
     ) -> FieldResult<InvoiceConnection> {
         let ctx = exec.context();
-        let conn = &ddb::establish_connection();
+        let conn = ddb::establish_connection();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let authorized_user_id = ctx
@@ -47,7 +47,7 @@ impl QueryFields for Query {
         let supplier_id = input.supplier_id;
 
         let supplier = supplier_dao
-            .get(conn, supplier_id)
+            .get(&conn, supplier_id)
             .map_err(FieldError::from)?;
 
         if supplier.user_id != authorized_user_id {
@@ -55,7 +55,7 @@ impl QueryFields for Query {
         }
 
         let invoices = invoice_dao
-            .get_all_by_supplier(conn, supplier.id)
+            .get_all_by_supplier(&conn, supplier.id)
             .map_err(FieldError::from)?;
 
         Ok(InvoiceConnection(invoices))

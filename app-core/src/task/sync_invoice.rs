@@ -5,12 +5,12 @@ use crate::{CoreError, CoreResult};
 use chrono::{DateTime, Utc};
 
 pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<()> {
-    let conn = &ddb::establish_connection();
+    let conn = ddb::establish_connection();
     let user_dao: ddb::Dao<domain::user::User> = ddb::Dao::new();
     let invoice_dao: ddb::Dao<domain::invoice::Invoice> = ddb::Dao::new();
 
     let users = user_dao
-        .get_all_with_suppliers(conn)
+        .get_all_with_suppliers(&conn)
         .map_err(CoreError::from)?;
 
     for user in users {
@@ -31,8 +31,8 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         let refresh_token = tokens.refresh_token;
 
         only_user.update_misoca_refresh_token(refresh_token, now);
-        user_dao.tx(|| {
-            user_dao.update(conn, &only_user)?;
+        user_dao.tx(&conn, || {
+            user_dao.update(&conn, &only_user)?;
             Ok(())
         })?;
 
@@ -47,16 +47,16 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
                 })
                 .await?;
 
-            invoice_dao.tx(|| {
+            invoice_dao.tx(&conn, || {
                 for invoice in invoices {
-                    match invoice_dao.get(conn, invoice.id.clone()) {
+                    match invoice_dao.get(&conn, invoice.id.clone()) {
                         Ok(current) => {
                             if current.should_update(&invoice) {
-                                invoice_dao.update(conn, &invoice)?;
+                                invoice_dao.update(&conn, &invoice)?;
                             }
                         }
                         Err(CoreError::NotFound) => {
-                            invoice_dao.insert(conn, &invoice)?;
+                            invoice_dao.insert(&conn, &invoice)?;
                         }
                         Err(_) => {}
                     }

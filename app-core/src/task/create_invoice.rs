@@ -5,9 +5,9 @@ use crate::{CoreError, CoreResult};
 use chrono::{DateTime, Utc};
 
 pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<()> {
-    let user_dao: ddb::Dao<domain::user::User> = ddb::Dao::new(ddb::establish_connection());
-    let invoice_dao: ddb::Dao<domain::invoice::Invoice> =
-        ddb::Dao::new(ddb::establish_connection());
+    let conn = &ddb::establish_connection();
+    let user_dao: ddb::Dao<domain::user::User> = ddb::Dao::new();
+    let invoice_dao: ddb::Dao<domain::invoice::Invoice> = ddb::Dao::new();
 
     let users = user_dao.get_all_with_suppliers().map_err(CoreError::from)?;
 
@@ -30,7 +30,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
 
         only_user.update_misoca_refresh_token(refresh_token, now);
         user_dao.tx(|| {
-            user_dao.update(&only_user)?;
+            user_dao.update(conn, &only_user)?;
             Ok(())
         })?;
 
@@ -42,7 +42,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
             println!("発行日: {}", issue_date);
             println!("支払い期日: {}", payment_due_on);
 
-            let exist = invoice_dao.exist_by_subject(supplier.id.clone(), subject.clone())?;
+            let exist = invoice_dao.exist_by_subject(conn, supplier.id.clone(), subject.clone())?;
             if exist {
                 println!(
                     "請求先[{}]の請求書はすでに存在します",
@@ -64,7 +64,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
                 })
                 .await?;
 
-            invoice_dao.insert(&invoice)?;
+            invoice_dao.insert(conn, &invoice)?;
         }
     }
 

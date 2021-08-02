@@ -2,8 +2,10 @@ use crate::ddb;
 use crate::domain;
 use crate::misoca;
 use crate::{CoreError, CoreResult};
+use diesel::MysqlConnection;
 
 pub async fn exec(
+    conn: &MysqlConnection,
     supplier_dao: ddb::Dao<domain::supplier::Supplier>,
     invoice_dao: ddb::Dao<domain::invoice::Invoice>,
     misoca_cli: misoca::Client,
@@ -11,7 +13,7 @@ pub async fn exec(
     access_token: String,
 ) -> CoreResult<()> {
     let suppliers = supplier_dao
-        .get_all_by_user(user_id)
+        .get_all_by_user(conn, user_id)
         .map_err(CoreError::from)?;
 
     for supplier in suppliers {
@@ -25,16 +27,16 @@ pub async fn exec(
             })
             .await?;
 
-        invoice_dao.tx(|| {
+        invoice_dao.tx(conn, || {
             for invoice in invoices {
-                match invoice_dao.get(invoice.id.clone()) {
+                match invoice_dao.get(conn, invoice.id.clone()) {
                     Ok(current) => {
                         if current.should_update(&invoice) {
-                            invoice_dao.update(&invoice)?;
+                            invoice_dao.update(conn, &invoice)?;
                         }
                     }
                     Err(CoreError::NotFound) => {
-                        invoice_dao.insert(&invoice)?;
+                        invoice_dao.insert(conn, &invoice)?;
                     }
                     Err(_) => {}
                 }

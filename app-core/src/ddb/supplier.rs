@@ -61,11 +61,15 @@ impl From<domain::supplier::Supplier> for Entity {
 }
 
 impl Dao<domain::supplier::Supplier> {
-    pub fn get_all_by_user(&self, user_id: String) -> CoreResult<Vec<domain::supplier::Supplier>> {
+    pub fn get_all_by_user(
+        &self,
+        conn: &MysqlConnection,
+        user_id: String,
+    ) -> CoreResult<Vec<domain::supplier::Supplier>> {
         return suppliers::table
             .filter(suppliers::user_id.eq(user_id))
             .order(suppliers::created_at.desc())
-            .load::<Entity>(&self.conn)
+            .load::<Entity>(conn)
             .map(|v: Vec<Entity>| {
                 v.into_iter()
                     .map(|v| domain::supplier::Supplier::try_from(v).unwrap())
@@ -74,19 +78,27 @@ impl Dao<domain::supplier::Supplier> {
             .map_err(CoreError::from);
     }
 
-    pub fn get(&self, id: String) -> CoreResult<domain::supplier::Supplier> {
+    pub fn get(
+        &self,
+        conn: &MysqlConnection,
+        id: String,
+    ) -> CoreResult<domain::supplier::Supplier> {
         suppliers::table
             .find(id)
-            .first(&self.conn)
+            .first(conn)
             .map(|v: Entity| domain::supplier::Supplier::try_from(v).unwrap())
             .map_err(CoreError::from)
     }
 
-    pub fn insert(&self, item: &domain::supplier::Supplier) -> CoreResult<()> {
+    pub fn insert(
+        &self,
+        conn: &MysqlConnection,
+        item: &domain::supplier::Supplier,
+    ) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(suppliers::table)
             .values(e)
-            .execute(&self.conn)
+            .execute(conn)
             .map_err(CoreError::from)
         {
             return Err(e);
@@ -94,11 +106,15 @@ impl Dao<domain::supplier::Supplier> {
         Ok(())
     }
 
-    pub fn update(&self, item: &domain::supplier::Supplier) -> CoreResult<()> {
+    pub fn update(
+        &self,
+        conn: &MysqlConnection,
+        item: &domain::supplier::Supplier,
+    ) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::update(suppliers::table.find(e.id.clone()))
             .set(&e)
-            .execute(&self.conn)
+            .execute(conn)
             .map_err(CoreError::from)
         {
             return Err(e);
@@ -106,9 +122,9 @@ impl Dao<domain::supplier::Supplier> {
         Ok(())
     }
 
-    pub fn delete(&self, id: String) -> CoreResult<()> {
+    pub fn delete(&self, conn: &MysqlConnection, id: String) -> CoreResult<()> {
         if let Err(e) = diesel::delete(suppliers::table.find(id))
-            .execute(&self.conn)
+            .execute(conn)
             .map_err(CoreError::from)
         {
             return Err(e);

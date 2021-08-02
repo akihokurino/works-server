@@ -16,22 +16,20 @@ pub fn establish_connection() -> MysqlConnection {
 }
 
 pub struct Dao<T> {
-    pub conn: MysqlConnection,
     _phantom: PhantomData<fn() -> T>,
 }
 
 impl<T> Dao<T> {
-    pub fn new(conn: MysqlConnection) -> Self {
+    pub fn new() -> Self {
         Dao {
-            conn,
             _phantom: PhantomData,
         }
     }
 
-    pub fn tx<R, F>(&self, exec: F) -> CoreResult<R>
+    pub fn tx<R, F>(&self, conn: &MysqlConnection, exec: F) -> CoreResult<R>
     where
         F: FnOnce() -> CoreResult<R>,
     {
-        self.conn.transaction(|| exec())
+        conn.transaction(|| exec())
     }
 }

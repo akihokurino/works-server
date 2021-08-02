@@ -83,12 +83,13 @@ impl From<domain::invoice::Invoice> for Entity {
 impl Dao<domain::invoice::Invoice> {
     pub fn get_all_by_supplier(
         &self,
+        conn: &MysqlConnection,
         supplier_id: String,
     ) -> CoreResult<Vec<domain::invoice::Invoice>> {
         return invoices::table
             .filter(invoices::supplier_id.eq(supplier_id))
             .order(invoices::issue_at.desc())
-            .load::<Entity>(&self.conn)
+            .load::<Entity>(conn)
             .map(|v: Vec<Entity>| {
                 v.into_iter()
                     .map(|v| domain::invoice::Invoice::try_from(v).unwrap())
@@ -97,7 +98,7 @@ impl Dao<domain::invoice::Invoice> {
             .map_err(CoreError::from);
     }
 
-    pub fn get(&self, id: String) -> CoreResult<domain::invoice::Invoice> {
+    pub fn get(&self, conn: &MysqlConnection, id: String) -> CoreResult<domain::invoice::Invoice> {
         invoices::table
             .find(id)
             .first(&self.conn)
@@ -105,7 +106,12 @@ impl Dao<domain::invoice::Invoice> {
             .map_err(CoreError::from)
     }
 
-    pub fn exist_by_subject(&self, supplier_id: String, subject: String) -> CoreResult<bool> {
+    pub fn exist_by_subject(
+        &self,
+        conn: &MysqlConnection,
+        supplier_id: String,
+        subject: String,
+    ) -> CoreResult<bool> {
         select(exists(
             invoices::table.filter(
                 invoices::subject
@@ -113,15 +119,19 @@ impl Dao<domain::invoice::Invoice> {
                     .and(invoices::supplier_id.eq(supplier_id)),
             ),
         ))
-        .get_result(&self.conn)
+        .get_result(conn)
         .map_err(CoreError::from)
     }
 
-    pub fn insert(&self, item: &domain::invoice::Invoice) -> CoreResult<()> {
+    pub fn insert(
+        &self,
+        conn: &MysqlConnection,
+        item: &domain::invoice::Invoice,
+    ) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(invoices::table)
             .values(e)
-            .execute(&self.conn)
+            .execute(conn)
             .map_err(CoreError::from)
         {
             return Err(e);
@@ -129,11 +139,15 @@ impl Dao<domain::invoice::Invoice> {
         Ok(())
     }
 
-    pub fn update(&self, item: &domain::invoice::Invoice) -> CoreResult<()> {
+    pub fn update(
+        &self,
+        conn: &MysqlConnection,
+        item: &domain::invoice::Invoice,
+    ) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::update(invoices::table.find(e.id.clone()))
             .set(&e)
-            .execute(&self.conn)
+            .execute(conn)
             .map_err(CoreError::from)
         {
             return Err(e);
@@ -141,10 +155,14 @@ impl Dao<domain::invoice::Invoice> {
         Ok(())
     }
 
-    pub fn delete_by_supplier(&self, supplier_id: String) -> CoreResult<()> {
+    pub fn delete_by_supplier(
+        &self,
+        conn: &MysqlConnection,
+        supplier_id: String,
+    ) -> CoreResult<()> {
         if let Err(e) = diesel::delete(invoices::table)
             .filter(invoices::supplier_id.eq(supplier_id))
-            .execute(&self.conn)
+            .execute(conn)
             .map_err(CoreError::from)
         {
             return Err(e);

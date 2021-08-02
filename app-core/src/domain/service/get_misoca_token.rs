@@ -3,14 +3,16 @@ use crate::domain;
 use crate::misoca;
 use crate::{CoreError, CoreResult};
 use chrono::{DateTime, Utc};
+use diesel::MysqlConnection;
 
 pub async fn exec(
+    conn: &MysqlConnection,
     user_dao: ddb::Dao<domain::user::User>,
     misoca_cli: misoca::Client,
     user_id: String,
     now: DateTime<Utc>,
 ) -> CoreResult<String> {
-    let mut user = user_dao.get(user_id)?;
+    let mut user = user_dao.get(conn, user_id)?;
 
     if user.misoca_refresh_token.is_empty() {
         return Err(CoreError::Forbidden);
@@ -26,8 +28,8 @@ pub async fn exec(
     let refresh_token = tokens.refresh_token;
 
     user.update_misoca_refresh_token(refresh_token, now);
-    user_dao.tx(|| {
-        user_dao.update(&user)?;
+    user_dao.tx(conn, || {
+        user_dao.update(conn, &user)?;
         Ok(())
     })?;
 

@@ -1,3 +1,4 @@
+use crate::domain::invoice::Invoice;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use uuid::Uuid;
 
@@ -15,6 +16,12 @@ pub struct Supplier {
     pub subject: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct SupplierWithInvoices {
+    pub supplier: Supplier,
+    pub invoices: Vec<Invoice>,
 }
 
 impl Supplier {

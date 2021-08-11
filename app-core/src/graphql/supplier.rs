@@ -5,6 +5,7 @@ use juniper_from_schema::{QueryTrail, Walked};
 #[derive(Debug, Clone)]
 pub struct Supplier {
     pub supplier: domain::supplier::Supplier,
+    pub invoices: Vec<domain::invoice::Invoice>,
 }
 #[async_trait]
 impl SupplierFields for Supplier {
@@ -34,10 +35,18 @@ impl SupplierFields for Supplier {
     fn field_subject(&self, _: &Executor<Context>) -> FieldResult<String> {
         Ok(self.supplier.subject.clone())
     }
+
+    fn field_invoice_list<'s, 'r>(
+        &'s self,
+        _: &Executor<Context>,
+        _: &QueryTrail<'r, InvoiceConnection, Walked>,
+    ) -> FieldResult<InvoiceConnection> {
+        Ok(InvoiceConnection(self.invoices.clone()))
+    }
 }
 
 #[derive(Debug, Clone)]
-pub struct SupplierEdge(pub domain::supplier::Supplier);
+pub struct SupplierEdge(pub domain::supplier::SupplierWithInvoices);
 #[async_trait]
 impl SupplierEdgeFields for SupplierEdge {
     async fn field_node<'s, 'r, 'a>(
@@ -46,13 +55,14 @@ impl SupplierEdgeFields for SupplierEdge {
         _: &QueryTrail<'r, Supplier, Walked>,
     ) -> FieldResult<Supplier> {
         Ok(Supplier {
-            supplier: self.0.clone(),
+            supplier: self.0.supplier.clone(),
+            invoices: self.0.invoices.clone(),
         })
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct SupplierConnection(pub Vec<domain::supplier::Supplier>);
+pub struct SupplierConnection(pub Vec<domain::supplier::SupplierWithInvoices>);
 #[async_trait]
 impl SupplierConnectionFields for SupplierConnection {
     async fn field_edges<'s, 'r, 'a>(

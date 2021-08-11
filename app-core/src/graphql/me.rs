@@ -22,7 +22,7 @@ impl MeFields for Me {
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
 
         let suppliers = supplier_dao
-            .get_all_by_user(&conn, self.user.id.clone())
+            .get_all_by_user_with_invoices(&conn, self.user.id.clone())
             .map_err(FieldError::from)?;
 
         Ok(supplier::SupplierConnection(suppliers))

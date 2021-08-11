@@ -29,11 +29,31 @@ impl QueryFields for Query {
         Ok(Me { user })
     }
 
-    async fn field_get_invoice_list<'s, 'r, 'a>(
+    async fn field_supplier_list<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, SupplierConnection, Walked>,
+    ) -> FieldResult<SupplierConnection> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let suppliers = supplier_dao
+            .get_all_by_user_with_invoices(&conn, authorized_user_id)
+            .map_err(FieldError::from)?;
+
+        Ok(SupplierConnection(suppliers))
+    }
+
+    async fn field_invoice_list<'s, 'r, 'a>(
         &'s self,
         exec: &Executor<'r, 'a, Context>,
         _: &QueryTrail<'r, InvoiceConnection, Walked>,
-        input: GetInvoiceListInput,
+        supplier_id: String,
     ) -> FieldResult<InvoiceConnection> {
         let ctx = exec.context();
         let conn = ddb::establish_connection();
@@ -43,8 +63,6 @@ impl QueryFields for Query {
             .authorized_user_id
             .clone()
             .ok_or(FieldError::from("unauthorized"))?;
-
-        let supplier_id = input.supplier_id;
 
         let supplier = supplier_dao
             .get(&conn, supplier_id)
@@ -59,5 +77,25 @@ impl QueryFields for Query {
             .map_err(FieldError::from)?;
 
         Ok(InvoiceConnection(invoices))
+    }
+
+    async fn field_invoice_history_list<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, InvoiceHistoryConnection, Walked>,
+    ) -> FieldResult<InvoiceHistoryConnection> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldError::from("unauthorized"))?;
+
+        let histories = invoice_dao
+            .get_all_by_user_with_supplier(&conn, authorized_user_id)
+            .map_err(FieldError::from)?;
+
+        Ok(InvoiceHistoryConnection(histories))
     }
 }

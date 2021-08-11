@@ -1,4 +1,5 @@
 mod invoice;
+mod invoice_history;
 mod me;
 mod mutation;
 mod query;
@@ -8,6 +9,7 @@ use self::mutation::*;
 use self::query::*;
 use crate::ddb;
 use crate::graphql::invoice::*;
+use crate::graphql::invoice_history::*;
 use crate::graphql::me::*;
 use crate::graphql::supplier::*;
 use crate::misoca;

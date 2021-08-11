@@ -14,7 +14,9 @@ schema {
 
 type Query {
     me: Me! @juniper(ownership: "owned", async: true)
-    getInvoiceList(input: GetInvoiceListInput!): InvoiceConnection! @juniper(ownership: "owned", async: true)
+    supplierList: SupplierConnection! @juniper(ownership: "owned", async: true)
+    invoiceList(supplierId: String!): InvoiceConnection! @juniper(ownership: "owned", async: true)
+    invoiceHistoryList: InvoiceHistoryConnection! @juniper(ownership: "owned", async: true)
 }
 
 type Mutation {
@@ -43,6 +45,7 @@ type Supplier implements Node {
     billingAmountExcludeTax: Int! @juniper(ownership: "owned")
     billingType: GraphQLBillingType! @juniper(ownership: "owned")
     subject: String! @juniper(ownership: "owned")
+    invoiceList: InvoiceConnection! @juniper(ownership: "owned")
 }
 
 type SupplierEdge {
@@ -72,6 +75,20 @@ type InvoiceEdge {
 
 type InvoiceConnection {
     edges: [InvoiceEdge!]! @juniper(ownership: "owned", async: true)
+}
+
+type InvoiceHistory implements Node {
+    id: ID! @juniper(ownership: "owned")
+    invoice: Invoice! @juniper(ownership: "owned")
+    supplier: Supplier! @juniper(ownership: "owned")
+}
+
+type InvoiceHistoryEdge {
+    node: InvoiceHistory! @juniper(ownership: "owned", async: true)
+}
+
+type InvoiceHistoryConnection {
+    edges: [InvoiceHistoryEdge!]! @juniper(ownership: "owned", async: true)
 }
 
 enum GraphQLBillingType {
@@ -109,10 +126,6 @@ input DeleteSupplierInput {
 
 input ConnectMisocaInput {
     code: String!
-}
-
-input GetInvoiceListInput {
-    supplierId: String!
 }
 
 input DownloadInvoicePDFInput {

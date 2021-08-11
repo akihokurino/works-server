@@ -1,3 +1,5 @@
+use crate::ddb::invoice;
+use crate::ddb::schema::invoices;
 use crate::ddb::schema::suppliers;
 use crate::ddb::user;
 use crate::ddb::Dao;
@@ -76,6 +78,45 @@ impl Dao<domain::supplier::Supplier> {
                     .collect::<Vec<_>>()
             })
             .map_err(CoreError::from);
+    }
+
+    pub fn get_all_by_user_with_invoices(
+        &self,
+        conn: &MysqlConnection,
+        user_id: String,
+    ) -> CoreResult<Vec<domain::supplier::SupplierWithInvoices>> {
+        let supplier_entities: Vec<Entity> = suppliers::table
+            .filter(suppliers::user_id.eq(user_id))
+            .order(suppliers::created_at.desc())
+            .load::<Entity>(conn)
+            .map_err(CoreError::from)?;
+
+        let invoice_entities: Vec<invoice::Entity> =
+            invoice::Entity::belonging_to(&supplier_entities)
+                .order(invoices::created_at.desc())
+                .load::<invoice::Entity>(conn)
+                .map_err(CoreError::from)?;
+
+        let supplier_entities_with_invoices: Vec<(Entity, Vec<invoice::Entity>)> =
+            supplier_entities
+                .clone()
+                .into_iter()
+                .zip(invoice_entities.clone().grouped_by(&supplier_entities))
+                .collect::<Vec<_>>();
+
+        Ok(supplier_entities_with_invoices
+            .into_iter()
+            .map(
+                |v: (Entity, Vec<invoice::Entity>)| domain::supplier::SupplierWithInvoices {
+                    supplier: domain::supplier::Supplier::try_from(v.0).unwrap(),
+                    invoices: v
+                        .1
+                        .into_iter()
+                        .map(|v| domain::invoice::Invoice::try_from(v).unwrap())
+                        .collect::<Vec<_>>(),
+                },
+            )
+            .collect::<Vec<_>>())
     }
 
     pub fn get(

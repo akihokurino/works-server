@@ -151,7 +151,10 @@ impl MutationFields for Mutation {
         })
         .map_err(FieldError::from)?;
 
-        Ok(Supplier { supplier })
+        Ok(Supplier {
+            supplier,
+            invoices: vec![],
+        })
     }
 
     async fn field_update_supplier<'s, 'r, 'a>(
@@ -243,7 +246,10 @@ impl MutationFields for Mutation {
         })
         .map_err(FieldError::from)?;
 
-        Ok(Supplier { supplier })
+        Ok(Supplier {
+            supplier,
+            invoices: vec![],
+        })
     }
 
     async fn field_delete_supplier<'s, 'r, 'a>(

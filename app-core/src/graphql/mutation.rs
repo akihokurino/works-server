@@ -1,5 +1,4 @@
 use crate::ddb::Tx;
-use crate::domain;
 use crate::graphql::me::Me;
 use crate::graphql::supplier::Supplier;
 use crate::graphql::Context;
@@ -7,6 +6,7 @@ use crate::graphql::*;
 use crate::misoca;
 use crate::INVOICE_BUCKET;
 use crate::INVOICE_PDF_DOWNLOAD_DURATION;
+use crate::{domain, FieldErrorWithCode};
 use crate::{CoreError, CoreResult};
 use actix_web::web::Buf;
 use async_trait::async_trait;
@@ -18,6 +18,14 @@ use juniper_from_schema::{QueryTrail, Walked};
 pub struct Mutation;
 #[async_trait]
 impl MutationFields for Mutation {
+    async fn field_debug<'s, 'r, 'a>(
+        &'s self,
+        _exec: &Executor<'r, 'a, Context>,
+    ) -> FieldResult<bool> {
+        let err = CoreError::NotFound;
+        Err(FieldErrorWithCode::from(err).into())
+    }
+
     async fn field_authenticate<'s, 'r, 'a>(
         &'s self,
         exec: &Executor<'r, 'a, Context>,
@@ -30,7 +38,7 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let user = user_dao.get(&conn, authorized_user_id.clone());
 
@@ -38,7 +46,7 @@ impl MutationFields for Mutation {
             CoreResult::Ok(user) => Ok(Me { user }),
             CoreResult::Err(err) => {
                 if err != CoreError::NotFound {
-                    return Err(FieldError::from(err));
+                    return Err(FieldErrorWithCode::from(err).into());
                 }
 
                 let user = Tx::run(&conn, || {
@@ -46,7 +54,7 @@ impl MutationFields for Mutation {
                     user_dao.insert(&conn, &user)?;
                     Ok(user)
                 })
-                .map_err(FieldError::from)?;
+                .map_err(FieldErrorWithCode::from)?;
 
                 Ok(Me { user })
             }
@@ -68,7 +76,7 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let name = input.name;
         let subject = input.subject;
@@ -80,10 +88,13 @@ impl MutationFields for Mutation {
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         if user.misoca_refresh_token.is_empty() {
-            return Err(FieldError::from("should connect misoca"));
+            return Err(FieldErrorWithCode::from(CoreError::BadRequest(
+                "misocaへの接続が必要です".to_string(),
+            ))
+            .into());
         }
 
         let tokens = misoca_cli
@@ -91,7 +102,7 @@ impl MutationFields for Mutation {
                 refresh_token: user.misoca_refresh_token.clone(),
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let access_token = tokens.access_token;
         let refresh_token = tokens.refresh_token;
@@ -101,7 +112,7 @@ impl MutationFields for Mutation {
             user_dao.update(&conn, &user)?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         let contacts = misoca_cli
             .get_contacts(misoca::contact::get_contacts::Input {
@@ -110,7 +121,7 @@ impl MutationFields for Mutation {
                 per_page: 100,
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let mut contact_id = "".to_string();
         let mut contact_group_id = "".to_string();
@@ -129,7 +140,7 @@ impl MutationFields for Mutation {
                     name: name.clone(),
                 })
                 .await
-                .map_err(FieldError::from)?;
+                .map_err(FieldErrorWithCode::from)?;
 
             contact_id = contact.id.unwrap().to_string();
             contact_group_id = contact.contact_group_id.unwrap().to_string();
@@ -149,7 +160,7 @@ impl MutationFields for Mutation {
             supplier_dao.insert(&conn, &supplier)?;
             Ok(supplier)
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         Ok(Supplier {
             supplier,
@@ -172,7 +183,7 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let id = input.id;
         let name = input.name;
@@ -181,10 +192,13 @@ impl MutationFields for Mutation {
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         if user.misoca_refresh_token.is_empty() {
-            return Err(FieldError::from("should connect misoca"));
+            return Err(FieldErrorWithCode::from(CoreError::BadRequest(
+                "misocaへの接続が必要です".to_string(),
+            ))
+            .into());
         }
 
         let tokens = misoca_cli
@@ -192,7 +206,7 @@ impl MutationFields for Mutation {
                 refresh_token: user.misoca_refresh_token.clone(),
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let access_token = tokens.access_token;
         let refresh_token = tokens.refresh_token;
@@ -202,7 +216,7 @@ impl MutationFields for Mutation {
             user_dao.update(&conn, &user)?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         let contacts = misoca_cli
             .get_contacts(misoca::contact::get_contacts::Input {
@@ -211,7 +225,7 @@ impl MutationFields for Mutation {
                 per_page: 100,
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let mut contact_id = "".to_string();
         let mut contact_group_id = "".to_string();
@@ -224,7 +238,10 @@ impl MutationFields for Mutation {
         }
 
         if contact_id == "" {
-            return Err(FieldError::from("not found misoca contact"));
+            return Err(FieldErrorWithCode::from(CoreError::BadRequest(
+                "misocaのcontactデータが見つかりません".to_string(),
+            ))
+            .into());
         }
 
         let supplier = Tx::run(&conn, || {
@@ -244,7 +261,7 @@ impl MutationFields for Mutation {
             supplier_dao.update(&conn, &supplier)?;
             Ok(supplier)
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         Ok(Supplier {
             supplier,
@@ -264,7 +281,7 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let id = input.id;
 
@@ -278,7 +295,7 @@ impl MutationFields for Mutation {
             supplier_dao.delete(&conn, supplier.id.clone())?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         Ok(true)
     }
@@ -298,18 +315,18 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let code = input.code;
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let tokens = misoca_cli
             .get_tokens(misoca::tokens::get_tokens::Input { code })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let access_token = tokens.access_token;
         let refresh_token = tokens.refresh_token;
@@ -319,11 +336,11 @@ impl MutationFields for Mutation {
             user_dao.update(&conn, &user)?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         let suppliers = supplier_dao
             .get_all_by_user(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         for supplier in suppliers {
             let invoices = misoca_cli
@@ -335,7 +352,7 @@ impl MutationFields for Mutation {
                     contact_group_id: supplier.contact_group_id.clone(),
                 })
                 .await
-                .map_err(FieldError::from)?;
+                .map_err(FieldErrorWithCode::from)?;
 
             Tx::run(&conn, || {
                 for invoice in invoices {
@@ -353,7 +370,7 @@ impl MutationFields for Mutation {
                 }
                 Ok(())
             })
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
         }
 
         Ok(true)
@@ -373,14 +390,17 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         if user.misoca_refresh_token.is_empty() {
-            return Err(FieldError::from("should connect misoca"));
+            return Err(FieldErrorWithCode::from(CoreError::BadRequest(
+                "misocaへの接続が必要です".to_string(),
+            ))
+            .into());
         }
 
         let tokens = misoca_cli
@@ -388,7 +408,7 @@ impl MutationFields for Mutation {
                 refresh_token: user.misoca_refresh_token.clone(),
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let access_token = tokens.access_token;
         let refresh_token = tokens.refresh_token;
@@ -398,11 +418,11 @@ impl MutationFields for Mutation {
             user_dao.update(&conn, &user)?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         let suppliers = supplier_dao
             .get_all_by_user(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         for supplier in suppliers {
             let invoices = misoca_cli
@@ -414,7 +434,7 @@ impl MutationFields for Mutation {
                     contact_group_id: supplier.contact_group_id.clone(),
                 })
                 .await
-                .map_err(FieldError::from)?;
+                .map_err(FieldErrorWithCode::from)?;
 
             Tx::run(&conn, || {
                 for invoice in invoices {
@@ -432,7 +452,7 @@ impl MutationFields for Mutation {
                 }
                 Ok(())
             })
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
         }
 
         Ok(true)
@@ -452,13 +472,13 @@ impl MutationFields for Mutation {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let invoice_id = input.invoice_id;
 
         let mut invoice = invoice_dao
             .get(&conn, invoice_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let next_path = format!(
             "invoice/{}_{}.pdf",
@@ -471,17 +491,20 @@ impl MutationFields for Mutation {
                 let download_url = Object::read(INVOICE_BUCKET, path.as_str())
                     .await
                     .map(|o| o.download_url(INVOICE_PDF_DOWNLOAD_DURATION))
-                    .map_err(FieldError::from)?;
+                    .map_err(FieldErrorWithCode::from)?;
                 return Ok(download_url.unwrap_or("".to_string()));
             }
         }
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         if user.misoca_refresh_token.is_empty() {
-            return Err(FieldError::from("should connect misoca"));
+            return Err(FieldErrorWithCode::from(CoreError::BadRequest(
+                "misocaへの接続が必要です".to_string(),
+            ))
+            .into());
         }
 
         let tokens = misoca_cli
@@ -489,7 +512,7 @@ impl MutationFields for Mutation {
                 refresh_token: user.misoca_refresh_token.clone(),
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let access_token = tokens.access_token;
         let refresh_token = tokens.refresh_token;
@@ -499,7 +522,7 @@ impl MutationFields for Mutation {
             user_dao.update(&conn, &user)?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         let data = misoca_cli
             .get_pdf(misoca::invoice::get_pdf::Input {
@@ -507,7 +530,7 @@ impl MutationFields for Mutation {
                 invoice_id: invoice.id.clone(),
             })
             .await
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         let object = Object::create(
             INVOICE_BUCKET,
@@ -516,18 +539,18 @@ impl MutationFields for Mutation {
             "application/pdf",
         )
         .await
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         invoice.update_pdf_path(next_path);
         Tx::run(&conn, || {
             invoice_dao.update(&conn, &invoice)?;
             Ok(())
         })
-        .map_err(FieldError::from)?;
+        .map_err(FieldErrorWithCode::from)?;
 
         let download_url = object
             .download_url(INVOICE_PDF_DOWNLOAD_DURATION)
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
         Ok(download_url)
     }
 }

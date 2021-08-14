@@ -1,5 +1,5 @@
-use crate::domain;
 use crate::graphql::*;
+use crate::{domain, FieldErrorWithCode};
 use juniper_from_schema::{QueryTrail, Walked};
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl MeFields for Me {
 
         let suppliers = supplier_dao
             .get_all_by_user_with_invoices(&conn, self.user.id.clone())
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         Ok(supplier::SupplierConnection(suppliers))
     }

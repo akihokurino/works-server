@@ -1,7 +1,7 @@
-use crate::domain;
 use crate::graphql::invoice::InvoiceConnection;
 use crate::graphql::Context;
 use crate::graphql::*;
+use crate::{domain, CoreError, FieldErrorWithCode};
 use async_trait::async_trait;
 use juniper::{Executor, FieldResult};
 use juniper_from_schema::{QueryTrail, Walked};
@@ -20,11 +20,11 @@ impl QueryFields for Query {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let user = user_dao
             .get(&conn, authorized_user_id)
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         Ok(Me { user })
     }
@@ -40,11 +40,11 @@ impl QueryFields for Query {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let suppliers = supplier_dao
             .get_all_by_user_with_invoices(&conn, authorized_user_id)
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         Ok(SupplierConnection(suppliers))
     }
@@ -62,19 +62,19 @@ impl QueryFields for Query {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let supplier = supplier_dao
             .get(&conn, supplier_id)
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         if supplier.user_id != authorized_user_id {
-            return Err(FieldError::from("unauthorized"));
+            return Err(FieldErrorWithCode::from(CoreError::UnAuthenticate).into());
         }
 
         let invoices = invoice_dao
             .get_all_by_supplier(&conn, supplier.id)
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         Ok(InvoiceConnection(invoices))
     }
@@ -90,11 +90,11 @@ impl QueryFields for Query {
         let authorized_user_id = ctx
             .authorized_user_id
             .clone()
-            .ok_or(FieldError::from("unauthorized"))?;
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let histories = invoice_dao
             .get_all_by_user_with_supplier(&conn, authorized_user_id)
-            .map_err(FieldError::from)?;
+            .map_err(FieldErrorWithCode::from)?;
 
         Ok(InvoiceHistoryConnection(histories))
     }

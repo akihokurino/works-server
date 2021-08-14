@@ -379,6 +379,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "cloud-storage",
+ "convert_case",
  "derive_more",
  "diesel",
  "diesel_migrations",
@@ -388,6 +389,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "strum_macros",
  "thiserror",
  "tokio",
  "uuid",
@@ -2292,6 +2294,18 @@ name = "stdweb-internal-runtime"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "213701ba3370744dcd1a12960caa4843b3d68b4d1c0a5d575e0d65b2ee9d16c0"
+
+[[package]]
+name = "strum_macros"
+version = "0.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d06aaeeee809dbc59eb4556183dd927df67db1540de5be8d3ec0b6636358a5ec"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "syn"

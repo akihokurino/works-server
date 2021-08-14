@@ -20,6 +20,7 @@ type Query {
 }
 
 type Mutation {
+    debug: Boolean! @juniper(ownership: "owned", async: true)
     authenticate: Me! @juniper(ownership: "owned", async: true)
     createSupplier(input: CreateSupplierInput!): Supplier! @juniper(ownership: "owned", async: true)
     updateSupplier(input: UpdateSupplierInput!): Supplier! @juniper(ownership: "owned", async: true)

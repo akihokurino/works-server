@@ -3,6 +3,8 @@ use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use uuid::Uuid;
 
 const CONSUMPTION_TAX_RATE: f64 = 0.1;
+const DATE_PLACEHOLDER: &str = "{D}";
+const SUBJECT_PLACEHOLDER: &str = "{S}";
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Supplier {
@@ -14,6 +16,7 @@ pub struct Supplier {
     pub billing_amount: i32,
     pub billing_type: BillingType,
     pub subject: String,
+    pub subject_template: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -33,6 +36,7 @@ impl Supplier {
         billing_amount: i32,
         billing_type: BillingType,
         subject: String,
+        subject_template: String,
         now: DateTime<Utc>,
     ) -> Self {
         Supplier {
@@ -44,6 +48,7 @@ impl Supplier {
             billing_amount,
             billing_type,
             subject,
+            subject_template,
             created_at: now.naive_utc(),
             updated_at: now.naive_utc(),
         }
@@ -56,6 +61,7 @@ impl Supplier {
         name: String,
         billing_amount: i32,
         subject: String,
+        subject_template: String,
         now: DateTime<Utc>,
     ) {
         self.contact_id = contact_id;
@@ -63,6 +69,7 @@ impl Supplier {
         self.name = name;
         self.billing_amount = billing_amount;
         self.subject = subject;
+        self.subject_template = subject_template;
         self.updated_at = now.naive_utc();
     }
 
@@ -74,11 +81,24 @@ impl Supplier {
 
     pub fn subject_in_this_month(&self, now: DateTime<Utc>) -> String {
         let first_day_in_last_month = NaiveDate::from_ymd(now.year(), now.month() - 1, 1);
-        format!(
-            "{} ({}月分)",
-            self.subject.clone(),
-            first_day_in_last_month.month()
-        )
+        let target_year = first_day_in_last_month.year();
+        let target_month = first_day_in_last_month.month();
+
+        if self.subject_template.is_empty() {
+            return format!(
+                "{} ({}年{}月分)",
+                self.subject.clone(),
+                target_year,
+                target_month
+            );
+        }
+
+        self.subject_template
+            .replace(SUBJECT_PLACEHOLDER, &self.subject)
+            .replace(
+                DATE_PLACEHOLDER,
+                format!("{}年{}月分", target_year, target_month).as_str(),
+            )
     }
 
     pub fn payment_date_in_this_month(&self, now: DateTime<Utc>) -> (String, String) {

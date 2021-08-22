@@ -80,6 +80,7 @@ impl MutationFields for Mutation {
 
         let name = input.name;
         let subject = input.subject;
+        let subject_template = input.subject_template;
         let billing_amount = input.billing_amount;
         let billing_type = match input.billing_type {
             GraphQLBillingType::Monthly => domain::supplier::BillingType::Monthly,
@@ -155,6 +156,7 @@ impl MutationFields for Mutation {
                 billing_amount,
                 billing_type,
                 subject,
+                subject_template,
                 now,
             );
             supplier_dao.insert(&conn, &supplier)?;
@@ -188,6 +190,7 @@ impl MutationFields for Mutation {
         let id = input.id;
         let name = input.name;
         let subject = input.subject;
+        let subject_template = input.subject_template;
         let billing_amount = input.billing_amount;
 
         let mut user = user_dao
@@ -256,6 +259,7 @@ impl MutationFields for Mutation {
                 name,
                 billing_amount,
                 subject,
+                subject_template,
                 now,
             );
             supplier_dao.update(&conn, &supplier)?;

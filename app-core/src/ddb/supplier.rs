@@ -22,6 +22,7 @@ pub struct Entity {
     pub billing_amount: i32,
     pub billing_type: i32,
     pub subject: String,
+    pub subject_template: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -39,6 +40,7 @@ impl TryFrom<Entity> for domain::supplier::Supplier {
             billing_amount: e.billing_amount,
             billing_type: domain::supplier::BillingType::from(e.billing_type),
             subject: e.subject,
+            subject_template: e.subject_template,
             created_at: e.created_at,
             updated_at: e.updated_at,
         })
@@ -56,6 +58,7 @@ impl From<domain::supplier::Supplier> for Entity {
             billing_amount: d.billing_amount,
             billing_type: d.billing_type.int(),
             subject: d.subject,
+            subject_template: d.subject_template,
             created_at: d.created_at,
             updated_at: d.updated_at,
         }

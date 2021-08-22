@@ -112,6 +112,7 @@ input CreateSupplierInput {
     billingAmount: Int!
     billingType: GraphQLBillingType!
     subject: String!
+    subjectTemplate: String!
 }
 
 input UpdateSupplierInput {
@@ -119,6 +120,7 @@ input UpdateSupplierInput {
     name: String!
     billingAmount: Int!
     subject: String!
+    subjectTemplate: String!
 }
 
 input DeleteSupplierInput {

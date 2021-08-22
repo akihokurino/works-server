@@ -17,6 +17,7 @@ table! {
         billing_amount -> Integer,
         billing_type -> Integer,
         subject -> Varchar,
+        subject_template -> Varchar,
         created_at -> Datetime,
         updated_at -> Datetime,
     }

@@ -46,3 +46,6 @@ setup_infra:
 
 deploy_oauth_callback:
 	cd oauth/callback && firebase use production && firebase deploy
+
+test:
+	cargo test

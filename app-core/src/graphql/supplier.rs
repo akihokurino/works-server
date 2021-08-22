@@ -36,6 +36,10 @@ impl SupplierFields for Supplier {
         Ok(self.supplier.subject.clone())
     }
 
+    fn field_subject_template(&self, _: &Executor<Context>) -> FieldResult<String> {
+        Ok(self.supplier.subject_template.clone())
+    }
+
     fn field_invoice_list<'s, 'r>(
         &'s self,
         _: &Executor<Context>,

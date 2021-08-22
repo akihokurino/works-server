@@ -28,6 +28,7 @@ type Mutation {
     connectMisoca(input: ConnectMisocaInput!): Boolean! @juniper(ownership: "owned", async: true)
     refreshMisoca: Boolean! @juniper(ownership: "owned", async: true)
     downloadInvoicePDF(input: DownloadInvoicePDFInput!): String! @juniper(ownership: "owned", async: true)
+    deleteInvoice(input: DeleteInvoiceInput!): Boolean! @juniper(ownership: "owned", async: true)
 }
 
 interface Node {
@@ -134,4 +135,8 @@ input ConnectMisocaInput {
 
 input DownloadInvoicePDFInput {
     invoiceId: String!
+}
+
+input DeleteInvoiceInput {
+    id: String!
 }

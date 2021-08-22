@@ -179,6 +179,16 @@ impl Dao<domain::invoice::Invoice> {
         Ok(())
     }
 
+    pub fn delete(&self, conn: &MysqlConnection, id: String) -> CoreResult<()> {
+        if let Err(e) = diesel::delete(invoices::table.find(id))
+            .execute(conn)
+            .map_err(CoreError::from)
+        {
+            return Err(e);
+        }
+        Ok(())
+    }
+
     pub fn delete_by_supplier(
         &self,
         conn: &MysqlConnection,

@@ -557,4 +557,36 @@ impl MutationFields for Mutation {
             .map_err(FieldErrorWithCode::from)?;
         Ok(download_url)
     }
+
+    async fn field_delete_invoice<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        input: DeleteInvoiceInput,
+    ) -> FieldResult<bool> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
+        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
+
+        let id = input.id;
+
+        Tx::run(&conn, || {
+            let invoice = invoice_dao.get(&conn, id.clone())?;
+            let supplier = supplier_dao.get(&conn, invoice.supplier_id.clone())?;
+
+            if supplier.user_id != authorized_user_id {
+                return Err(CoreError::Forbidden);
+            }
+
+            invoice_dao.delete(&conn, invoice.id.clone())?;
+            Ok(())
+        })
+        .map_err(FieldErrorWithCode::from)?;
+
+        Ok(true)
+    }
 }

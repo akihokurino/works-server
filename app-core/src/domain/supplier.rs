@@ -140,3 +140,53 @@ impl From<i32> for BillingType {
         }
     }
 }
+
+#[cfg(test)]
+mod supplier_tests {
+    use crate::domain::supplier::{BillingType, Supplier};
+    use chrono::{NaiveDateTime, TimeZone, Utc};
+
+    #[test]
+    fn subject_in_this_month() {
+        let dt = NaiveDateTime::parse_from_str("2021/09/01 12:00:00", "%Y/%m/%d %H:%M:%S").unwrap();
+        let now = Utc.from_local_datetime(&dt).unwrap();
+
+        let supplier1 = Supplier {
+            id: "".to_string(),
+            user_id: "".to_string(),
+            contact_id: "".to_string(),
+            contact_group_id: "".to_string(),
+            name: "".to_string(),
+            billing_amount: 0,
+            billing_type: BillingType::OneTime,
+            subject: "通常の件名テスト".to_string(),
+            subject_template: "".to_string(),
+            created_at: now.naive_utc(),
+            updated_at: now.naive_utc(),
+        };
+
+        assert_eq!(
+            supplier1.subject_in_this_month(now),
+            "通常の件名テスト (2021年8月分)"
+        );
+
+        let supplier2 = Supplier {
+            id: "".to_string(),
+            user_id: "".to_string(),
+            contact_id: "".to_string(),
+            contact_group_id: "".to_string(),
+            name: "".to_string(),
+            billing_amount: 0,
+            billing_type: BillingType::OneTime,
+            subject: "テンプレートの件名テスト".to_string(),
+            subject_template: "{D} {S}".to_string(),
+            created_at: now.naive_utc(),
+            updated_at: now.naive_utc(),
+        };
+
+        assert_eq!(
+            supplier2.subject_in_this_month(now),
+            "2021年8月分 テンプレートの件名テスト"
+        );
+    }
+}

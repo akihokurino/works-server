@@ -1,5 +1,4 @@
 pub mod invoice;
-pub mod service;
 pub mod supplier;
 pub mod user;
 

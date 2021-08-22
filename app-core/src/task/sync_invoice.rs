@@ -19,7 +19,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         let only_user = user.0;
         let suppliers = user.1;
 
-        let access_token = domain::service::get_misoca_token::exec(
+        let access_token = crate::task::get_misoca_token::exec(
             Mutex::new(&conn),
             user_dao.clone(),
             misoca_cli.clone(),

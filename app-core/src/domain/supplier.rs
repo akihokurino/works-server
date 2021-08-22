@@ -147,6 +147,27 @@ mod supplier_tests {
     use chrono::{NaiveDateTime, TimeZone, Utc};
 
     #[test]
+    fn billing_amount_include_tax() {
+        let now = Utc::now();
+
+        let supplier = Supplier {
+            id: "".to_string(),
+            user_id: "".to_string(),
+            contact_id: "".to_string(),
+            contact_group_id: "".to_string(),
+            name: "".to_string(),
+            billing_amount: 200000,
+            billing_type: BillingType::OneTime,
+            subject: "".to_string(),
+            subject_template: "".to_string(),
+            created_at: now.naive_utc(),
+            updated_at: now.naive_utc(),
+        };
+
+        assert_eq!(supplier.billing_amount_include_tax(), 220000);
+    }
+
+    #[test]
     fn subject_in_this_month() {
         let dt = NaiveDateTime::parse_from_str("2021/09/01 12:00:00", "%Y/%m/%d %H:%M:%S").unwrap();
         let now = Utc.from_local_datetime(&dt).unwrap();
@@ -188,5 +209,30 @@ mod supplier_tests {
             supplier2.subject_in_this_month(now),
             "2021年8月分 テンプレートの件名テスト"
         );
+    }
+
+    #[test]
+    fn payment_date_in_this_month() {
+        let dt = NaiveDateTime::parse_from_str("2021/09/01 12:00:00", "%Y/%m/%d %H:%M:%S").unwrap();
+        let now = Utc.from_local_datetime(&dt).unwrap();
+
+        let supplier = Supplier {
+            id: "".to_string(),
+            user_id: "".to_string(),
+            contact_id: "".to_string(),
+            contact_group_id: "".to_string(),
+            name: "".to_string(),
+            billing_amount: 0,
+            billing_type: BillingType::OneTime,
+            subject: "".to_string(),
+            subject_template: "".to_string(),
+            created_at: now.naive_utc(),
+            updated_at: now.naive_utc(),
+        };
+
+        let (issue_date, payment_due_on) = supplier.payment_date_in_this_month(now);
+
+        assert_eq!(issue_date, "2021-09-01");
+        assert_eq!(payment_due_on, "2021-09-30");
     }
 }

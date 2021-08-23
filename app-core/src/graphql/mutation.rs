@@ -78,10 +78,10 @@ impl MutationFields for Mutation {
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
-        let name = input.name;
-        let subject = input.subject;
-        let subject_template = input.subject_template;
-        let billing_amount = input.billing_amount;
+        let name: String = input.name;
+        let subject: String = input.subject;
+        let subject_template: String = input.subject_template;
+        let billing_amount: i32 = input.billing_amount;
         let billing_type = match input.billing_type {
             GraphQLBillingType::Monthly => domain::supplier::BillingType::Monthly,
             GraphQLBillingType::OneTime => domain::supplier::BillingType::OneTime,
@@ -187,11 +187,11 @@ impl MutationFields for Mutation {
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
-        let id = input.id;
-        let name = input.name;
-        let subject = input.subject;
-        let subject_template = input.subject_template;
-        let billing_amount = input.billing_amount;
+        let id: String = input.id;
+        let name: String = input.name;
+        let subject: String = input.subject;
+        let subject_template: String = input.subject_template;
+        let billing_amount: i32 = input.billing_amount;
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
@@ -287,7 +287,7 @@ impl MutationFields for Mutation {
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
-        let id = input.id;
+        let id: String = input.id;
 
         Tx::run(&conn, || {
             let supplier = supplier_dao.get(&conn, id.clone())?;
@@ -321,7 +321,7 @@ impl MutationFields for Mutation {
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
-        let code = input.code;
+        let code: String = input.code;
 
         let mut user = user_dao
             .get(&conn, authorized_user_id.clone())
@@ -478,7 +478,7 @@ impl MutationFields for Mutation {
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
-        let invoice_id = input.invoice_id;
+        let invoice_id: String = input.invoice_id;
 
         let mut invoice = invoice_dao
             .get(&conn, invoice_id.clone())
@@ -572,7 +572,7 @@ impl MutationFields for Mutation {
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
-        let id = input.id;
+        let id: String = input.id;
 
         Tx::run(&conn, || {
             let invoice = invoice_dao.get(&conn, id.clone())?;
@@ -584,6 +584,157 @@ impl MutationFields for Mutation {
 
             invoice_dao.delete(&conn, invoice.id.clone())?;
             Ok(())
+        })
+        .map_err(FieldErrorWithCode::from)?;
+
+        Ok(true)
+    }
+
+    async fn field_register_bank<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, Bank, Walked>,
+        input: RegisterBankInput,
+    ) -> FieldResult<Bank> {
+        let now: DateTime<Utc> = Utc::now();
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
+
+        let name: String = input.name;
+        let code: String = input.code;
+        let account_type = match input.account_type {
+            GraphQLBankAccountType::Savings => domain::bank::AccountType::Savings,
+            GraphQLBankAccountType::Checking => domain::bank::AccountType::Checking,
+        };
+        let account_number: String = input.account_number;
+
+        let bank = Tx::run(&conn, || {
+            let banks = bank_dao.get_all_by_user(&conn, authorized_user_id.clone())?;
+            if banks.is_empty() {
+                let bank = domain::bank::Bank::new(
+                    authorized_user_id.clone(),
+                    name,
+                    code,
+                    account_type,
+                    account_number,
+                    now,
+                );
+                bank_dao.insert(&conn, &bank)?;
+                Ok(bank)
+            } else {
+                let mut bank = banks.first().cloned().unwrap();
+                bank.update(name, code, account_type, account_number, now);
+                bank_dao.update(&conn, &bank)?;
+                Ok(bank)
+            }
+        })
+        .map_err(FieldErrorWithCode::from)?;
+
+        Ok(Bank { bank })
+    }
+
+    async fn field_delete_bank<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        input: DeleteBankInput,
+    ) -> FieldResult<bool> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
+
+        let id: String = input.id;
+
+        Tx::run(&conn, || {
+            let bank = bank_dao.get(&conn, id)?;
+            if bank.user_id != authorized_user_id.clone() {
+                return Err(CoreError::Forbidden);
+            }
+
+            bank_dao.delete(&conn, bank.id)
+        })
+        .map_err(FieldErrorWithCode::from)?;
+
+        Ok(true)
+    }
+
+    async fn field_register_sender<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, Sender, Walked>,
+        input: RegisterSenderInput,
+    ) -> FieldResult<Sender> {
+        let now: DateTime<Utc> = Utc::now();
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
+
+        let name: String = input.name;
+        let email: String = input.email;
+        let tel: String = input.tel;
+        let postal_code: String = input.postal_code;
+        let address: String = input.address;
+
+        let sender = Tx::run(&conn, || {
+            let senders = sender_dao.get_all_by_user(&conn, authorized_user_id.clone())?;
+            if senders.is_empty() {
+                let sender = domain::sender::Sender::new(
+                    authorized_user_id.clone(),
+                    name,
+                    email,
+                    tel,
+                    postal_code,
+                    address,
+                    now,
+                );
+                sender_dao.insert(&conn, &sender)?;
+                Ok(sender)
+            } else {
+                let mut sender = senders.first().cloned().unwrap();
+                sender.update(name, email, tel, postal_code, address, now);
+                sender_dao.update(&conn, &sender)?;
+                Ok(sender)
+            }
+        })
+        .map_err(FieldErrorWithCode::from)?;
+
+        Ok(Sender { sender })
+    }
+
+    async fn field_delete_sender<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        input: DeleteSenderInput,
+    ) -> FieldResult<bool> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
+        let authorized_user_id = ctx
+            .authorized_user_id
+            .clone()
+            .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
+
+        let id: String = input.id;
+
+        Tx::run(&conn, || {
+            let sender = sender_dao.get(&conn, id)?;
+            if sender.user_id != authorized_user_id.clone() {
+                return Err(CoreError::Forbidden);
+            }
+
+            sender_dao.delete(&conn, sender.id)
         })
         .map_err(FieldErrorWithCode::from)?;
 

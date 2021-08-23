@@ -72,6 +72,14 @@ impl Dao<domain::bank::Bank> {
             .map_err(CoreError::from);
     }
 
+    pub fn get(&self, conn: &MysqlConnection, id: String) -> CoreResult<domain::bank::Bank> {
+        banks::table
+            .find(id)
+            .first(conn)
+            .map(|v: Entity| domain::bank::Bank::try_from(v).unwrap())
+            .map_err(CoreError::from)
+    }
+
     pub fn insert(&self, conn: &MysqlConnection, item: &domain::bank::Bank) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(banks::table)

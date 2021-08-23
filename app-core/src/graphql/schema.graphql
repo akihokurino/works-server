@@ -29,6 +29,10 @@ type Mutation {
     refreshMisoca: Boolean! @juniper(ownership: "owned", async: true)
     downloadInvoicePDF(input: DownloadInvoicePDFInput!): String! @juniper(ownership: "owned", async: true)
     deleteInvoice(input: DeleteInvoiceInput!): Boolean! @juniper(ownership: "owned", async: true)
+    registerBank(input: RegisterBankInput!): Bank! @juniper(ownership: "owned", async: true)
+    deleteBank(input: DeleteBankInput!): Boolean! @juniper(ownership: "owned", async: true)
+    registerSender(input: RegisterSenderInput!): Sender! @juniper(ownership: "owned", async: true)
+    deleteSender(input: DeleteSenderInput!): Boolean! @juniper(ownership: "owned", async: true)
 }
 
 interface Node {
@@ -162,5 +166,28 @@ input DownloadInvoicePDFInput {
 }
 
 input DeleteInvoiceInput {
+    id: String!
+}
+
+input RegisterBankInput {
+    name: String!
+    code: String!
+    accountType: GraphQLBankAccountType!
+    accountNumber: String!
+}
+
+input DeleteBankInput {
+    id: String!
+}
+
+input RegisterSenderInput {
+    name: String!
+    email: String!
+    tel: String!
+    postalCode: String!
+    address: String!
+}
+
+input DeleteSenderInput {
     id: String!
 }

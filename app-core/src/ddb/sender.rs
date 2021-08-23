@@ -75,6 +75,14 @@ impl Dao<domain::sender::Sender> {
             .map_err(CoreError::from);
     }
 
+    pub fn get(&self, conn: &MysqlConnection, id: String) -> CoreResult<domain::sender::Sender> {
+        senders::table
+            .find(id)
+            .first(conn)
+            .map(|v: Entity| domain::sender::Sender::try_from(v).unwrap())
+            .map_err(CoreError::from)
+    }
+
     pub fn insert(&self, conn: &MysqlConnection, item: &domain::sender::Sender) -> CoreResult<()> {
         let e: Entity = item.clone().into();
         if let Err(e) = diesel::insert_into(senders::table)

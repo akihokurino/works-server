@@ -27,7 +27,12 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         )
         .await?;
 
-        for supplier in suppliers {
+        for supplier in suppliers
+            .clone()
+            .into_iter()
+            .filter(|v| v.billing_type == domain::supplier::BillingType::Monthly)
+            .collect::<Vec<_>>()
+        {
             let subject = supplier.subject_in_this_month(now).clone();
             let (issue_date, payment_due_on) = supplier.payment_date_in_this_month(now);
 

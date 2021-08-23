@@ -15,7 +15,7 @@ docker login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" https:/
 docker push ${IMAGE}
 
 gcloud container clusters get-credentials app-cluster --zone=asia-northeast1-a
-envsubst < k8s.${ENV}.yaml | cat | kubectl apply -f -
+envsubst < k8s.yaml | cat | kubectl apply -f -
 
 docker rmi -f `docker images | grep "gcr.io/${PROJECT}" | awk '{print $3}'`
 docker rmi -f `docker images | grep "<none>" | awk '{print $3}'`

@@ -71,6 +71,15 @@ impl Default for AccountType {
     }
 }
 
+impl ToString for AccountType {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Savings => "普通".to_string(),
+            Self::Checking => "当座".to_string(),
+        }
+    }
+}
+
 impl From<i32> for AccountType {
     fn from(v: i32) -> AccountType {
         match v {

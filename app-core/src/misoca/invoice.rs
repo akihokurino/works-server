@@ -82,13 +82,63 @@ impl Client {
         }
 
         #[derive(Debug, Serialize)]
+        struct Sender {
+            pub sender_name1: String,
+            pub sender_zip_code: String,
+            pub sender_address1: String,
+            pub sender_tel: String,
+            pub sender_email: String,
+            pub bank_accounts: Vec<Bank>,
+        }
+
+        #[derive(Debug, Serialize)]
+        struct Bank {
+            pub detail: String,
+        }
+
+        #[derive(Debug, Serialize)]
         struct Body {
             pub issue_date: String,
             pub subject: String,
             pub payment_due_on: String,
             pub contact_id: i32,
             pub items: Vec<ItemBody>,
+            pub body: Sender,
         }
+
+        let banks = if let Some(bank) = input.bank.clone() {
+            vec![Bank {
+                detail: format!(
+                    "{}（{}）（{}）口座番号：{}",
+                    bank.name,
+                    bank.code,
+                    bank.account_type.to_string(),
+                    bank.account_number
+                ),
+            }]
+        } else {
+            vec![]
+        };
+
+        let sender = if let Some(sender) = input.sender.clone() {
+            Sender {
+                sender_name1: sender.name,
+                sender_zip_code: sender.postal_code,
+                sender_address1: sender.address,
+                sender_tel: sender.tel,
+                sender_email: sender.email,
+                bank_accounts: banks,
+            }
+        } else {
+            Sender {
+                sender_name1: "".to_string(),
+                sender_zip_code: "".to_string(),
+                sender_address1: "".to_string(),
+                sender_tel: "".to_string(),
+                sender_email: "".to_string(),
+                bank_accounts: banks,
+            }
+        };
 
         let body = Body {
             issue_date: input.issue_date.clone(),
@@ -102,6 +152,7 @@ impl Client {
                 tax_type: "STANDARD_TAX_10".to_string(),
                 excluding_withholding_tax: false,
             }],
+            body: sender,
         };
 
         println!("json body: {}", serde_json::to_string(&body).unwrap());
@@ -170,6 +221,8 @@ pub mod create_invoice {
         pub issue_date: String,
         pub payment_due_on: String,
         pub billing_amount: i32,
+        pub bank: Option<domain::bank::Bank>,
+        pub sender: Option<domain::sender::Sender>,
         pub now: DateTime<Utc>,
     }
 

@@ -1,16 +1,20 @@
+mod bank;
 mod invoice;
 mod invoice_history;
 mod me;
 mod mutation;
 mod query;
+mod sender;
 mod supplier;
 
 use self::mutation::*;
 use self::query::*;
 use crate::ddb;
+use crate::graphql::bank::*;
 use crate::graphql::invoice::*;
 use crate::graphql::invoice_history::*;
 use crate::graphql::me::*;
+use crate::graphql::sender::*;
 use crate::graphql::supplier::*;
 use crate::misoca;
 use juniper::*;

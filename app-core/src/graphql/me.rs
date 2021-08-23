@@ -12,7 +12,7 @@ impl MeFields for Me {
         Ok(Into::into(self.user.id.clone()))
     }
 
-    async fn field_suppliers<'s, 'r, 'a>(
+    async fn field_supplier_list<'s, 'r, 'a>(
         &'s self,
         exec: &Executor<'r, 'a, Context>,
         _: &QueryTrail<'r, supplier::SupplierConnection, Walked>,
@@ -26,5 +26,45 @@ impl MeFields for Me {
             .map_err(FieldErrorWithCode::from)?;
 
         Ok(supplier::SupplierConnection(suppliers))
+    }
+
+    async fn field_sender<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, sender::Sender, Walked>,
+    ) -> FieldResult<Option<sender::Sender>> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
+
+        let senders = sender_dao
+            .get_all_by_user(&conn, self.user.id.clone())
+            .map_err(FieldErrorWithCode::from)?;
+
+        if let Some(sender) = senders.first() {
+            return Ok(Some(sender::Sender {
+                sender: sender.clone(),
+            }));
+        }
+        Ok(None)
+    }
+
+    async fn field_bank<'s, 'r, 'a>(
+        &'s self,
+        exec: &Executor<'r, 'a, Context>,
+        _: &QueryTrail<'r, bank::Bank, Walked>,
+    ) -> FieldResult<Option<bank::Bank>> {
+        let ctx = exec.context();
+        let conn = ddb::establish_connection();
+        let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
+
+        let banks = bank_dao
+            .get_all_by_user(&conn, self.user.id.clone())
+            .map_err(FieldErrorWithCode::from)?;
+
+        if let Some(bank) = banks.first() {
+            return Ok(Some(bank::Bank { bank: bank.clone() }));
+        }
+        Ok(None)
     }
 }

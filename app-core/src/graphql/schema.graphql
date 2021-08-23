@@ -37,7 +37,9 @@ interface Node {
 
 type Me implements Node {
     id: ID! @juniper(ownership: "owned")
-    suppliers: SupplierConnection! @juniper(ownership: "owned", async: true)
+    supplierList: SupplierConnection! @juniper(ownership: "owned", async: true)
+    sender: Sender @juniper(ownership: "owned", async: true)
+    bank: Bank @juniper(ownership: "owned", async: true)
 }
 
 type Supplier implements Node {
@@ -92,6 +94,28 @@ type InvoiceHistoryEdge {
 
 type InvoiceHistoryConnection {
     edges: [InvoiceHistoryEdge!]! @juniper(ownership: "owned", async: true)
+}
+
+type Bank implements Node {
+    id: ID! @juniper(ownership: "owned")
+    name: String! @juniper(ownership: "owned")
+    code: String! @juniper(ownership: "owned")
+    accountType: GraphQLBankAccountType! @juniper(ownership: "owned")
+    accountNumber: String! @juniper(ownership: "owned")
+}
+
+type Sender implements Node {
+    id: ID! @juniper(ownership: "owned")
+    name: String! @juniper(ownership: "owned")
+    email: String! @juniper(ownership: "owned")
+    tel: String! @juniper(ownership: "owned")
+    postalCode: String! @juniper(ownership: "owned")
+    address: String! @juniper(ownership: "owned")
+}
+
+enum GraphQLBankAccountType {
+    Savings
+    Checking
 }
 
 enum GraphQLBillingType {

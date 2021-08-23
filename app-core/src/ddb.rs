@@ -1,5 +1,7 @@
+pub mod bank;
 pub mod invoice;
 mod schema;
+pub mod sender;
 pub mod supplier;
 pub mod user;
 

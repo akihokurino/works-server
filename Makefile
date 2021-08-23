@@ -23,6 +23,8 @@ build-api:
 build-batch:
 	cargo build --bin app-batch
 
+build: build-api
+
 clean:
 	cargo clean
 

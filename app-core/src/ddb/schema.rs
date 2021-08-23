@@ -46,4 +46,33 @@ table! {
 }
 joinable!(invoices -> suppliers (supplier_id));
 
-allow_tables_to_appear_in_same_query!(users, suppliers, invoices,);
+table! {
+    banks (id) {
+        id -> Varchar,
+        user_id -> Varchar,
+        name -> Varchar,
+        code -> Varchar,
+        account_type -> Integer,
+        account_number -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+joinable!(banks -> users (user_id));
+
+table! {
+    senders (id) {
+        id -> Varchar,
+        user_id -> Varchar,
+        name -> Varchar,
+        email -> Varchar,
+        tel -> Varchar,
+        postal_code -> Varchar,
+        address -> Varchar,
+        created_at -> Datetime,
+        updated_at -> Datetime,
+    }
+}
+joinable!(senders -> users (user_id));
+
+allow_tables_to_appear_in_same_query!(users, suppliers, invoices, banks, senders);

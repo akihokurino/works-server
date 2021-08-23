@@ -1,4 +1,6 @@
+pub mod bank;
 pub mod invoice;
+pub mod sender;
 pub mod supplier;
 pub mod user;
 

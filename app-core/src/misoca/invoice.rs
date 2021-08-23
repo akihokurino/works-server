@@ -184,7 +184,6 @@ impl Client {
 pub mod get_invoices {
     use super::*;
 
-    #[derive(Debug, Serialize)]
     pub struct Input {
         pub access_token: String,
         pub page: i32,
@@ -199,7 +198,6 @@ pub mod get_invoices {
 pub mod get_pdf {
     use super::*;
 
-    #[derive(Debug, Serialize)]
     pub struct Input {
         pub access_token: String,
         pub invoice_id: String,
@@ -212,7 +210,6 @@ pub mod create_invoice {
     use super::*;
     use chrono::{DateTime, Utc};
 
-    #[derive(Debug, Serialize)]
     pub struct Input {
         pub access_token: String,
         pub supplier_id: String,

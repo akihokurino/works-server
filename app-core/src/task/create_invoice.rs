@@ -1,6 +1,7 @@
 use crate::ddb;
 use crate::domain;
 use crate::misoca;
+use crate::task::get_misoca_token;
 use crate::{CoreError, CoreResult};
 use chrono::{DateTime, Utc};
 use std::sync::Mutex;
@@ -9,6 +10,8 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
     let conn = ddb::establish_connection();
     let user_dao: ddb::Dao<domain::user::User> = ddb::Dao::new();
     let invoice_dao: ddb::Dao<domain::invoice::Invoice> = ddb::Dao::new();
+    let bank_dao: ddb::Dao<domain::bank::Bank> = ddb::Dao::new();
+    let sender_dao: ddb::Dao<domain::sender::Sender> = ddb::Dao::new();
 
     let users = user_dao
         .get_all_with_suppliers(&conn)
@@ -18,7 +21,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         let only_user = user.0;
         let suppliers = user.1;
 
-        let access_token = crate::task::get_misoca_token::exec(
+        let access_token = get_misoca_token::exec(
             Mutex::new(&conn),
             user_dao.clone(),
             misoca_cli.clone(),
@@ -26,6 +29,9 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
             now,
         )
         .await?;
+
+        let banks = bank_dao.get_all_by_user(&conn, only_user.id.clone())?;
+        let senders = sender_dao.get_all_by_user(&conn, only_user.id.clone())?;
 
         for supplier in suppliers
             .clone()
@@ -59,6 +65,8 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
                     issue_date,
                     payment_due_on,
                     billing_amount: supplier.billing_amount.clone(),
+                    bank: banks.first().cloned(),
+                    sender: senders.first().cloned(),
                     now,
                 })
                 .await?;

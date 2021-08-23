@@ -39,9 +39,9 @@ impl InvoiceHistoryFields for InvoiceHistory {
 pub struct InvoiceHistoryEdge(pub domain::invoice::Invoice, pub domain::supplier::Supplier);
 #[async_trait]
 impl InvoiceHistoryEdgeFields for InvoiceHistoryEdge {
-    async fn field_node<'s, 'r, 'a>(
+    fn field_node<'s, 'r>(
         &'s self,
-        _exec: &Executor<'r, 'a, Context>,
+        _exec: &Executor<Context>,
         _: &QueryTrail<'r, InvoiceHistory, Walked>,
     ) -> FieldResult<InvoiceHistory> {
         Ok(InvoiceHistory {
@@ -57,9 +57,9 @@ pub struct InvoiceHistoryConnection(
 );
 #[async_trait]
 impl InvoiceHistoryConnectionFields for InvoiceHistoryConnection {
-    async fn field_edges<'s, 'r, 'a>(
+    fn field_edges<'s, 'r>(
         &'s self,
-        _exec: &Executor<'r, 'a, Context>,
+        _exec: &Executor<Context>,
         _: &QueryTrail<'r, InvoiceHistoryEdge, Walked>,
     ) -> FieldResult<Vec<InvoiceHistoryEdge>> {
         let edges = self

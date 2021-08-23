@@ -54,11 +54,11 @@ type Supplier implements Node {
 }
 
 type SupplierEdge {
-    node: Supplier! @juniper(ownership: "owned", async: true)
+    node: Supplier! @juniper(ownership: "owned")
 }
 
 type SupplierConnection {
-    edges: [SupplierEdge!]! @juniper(ownership: "owned", async: true)
+    edges: [SupplierEdge!]! @juniper(ownership: "owned")
 }
 
 type Invoice implements Node {
@@ -75,11 +75,11 @@ type Invoice implements Node {
 }
 
 type InvoiceEdge {
-    node: Invoice! @juniper(ownership: "owned", async: true)
+    node: Invoice! @juniper(ownership: "owned")
 }
 
 type InvoiceConnection {
-    edges: [InvoiceEdge!]! @juniper(ownership: "owned", async: true)
+    edges: [InvoiceEdge!]! @juniper(ownership: "owned")
 }
 
 type InvoiceHistory implements Node {
@@ -89,11 +89,11 @@ type InvoiceHistory implements Node {
 }
 
 type InvoiceHistoryEdge {
-    node: InvoiceHistory! @juniper(ownership: "owned", async: true)
+    node: InvoiceHistory! @juniper(ownership: "owned")
 }
 
 type InvoiceHistoryConnection {
-    edges: [InvoiceHistoryEdge!]! @juniper(ownership: "owned", async: true)
+    edges: [InvoiceHistoryEdge!]! @juniper(ownership: "owned")
 }
 
 type Bank implements Node {

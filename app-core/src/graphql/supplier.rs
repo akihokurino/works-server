@@ -53,9 +53,9 @@ impl SupplierFields for Supplier {
 pub struct SupplierEdge(pub domain::supplier::SupplierWithInvoices);
 #[async_trait]
 impl SupplierEdgeFields for SupplierEdge {
-    async fn field_node<'s, 'r, 'a>(
+    fn field_node<'s, 'r>(
         &'s self,
-        _exec: &Executor<'r, 'a, Context>,
+        _exec: &Executor<Context>,
         _: &QueryTrail<'r, Supplier, Walked>,
     ) -> FieldResult<Supplier> {
         Ok(Supplier {
@@ -69,9 +69,9 @@ impl SupplierEdgeFields for SupplierEdge {
 pub struct SupplierConnection(pub Vec<domain::supplier::SupplierWithInvoices>);
 #[async_trait]
 impl SupplierConnectionFields for SupplierConnection {
-    async fn field_edges<'s, 'r, 'a>(
+    fn field_edges<'s, 'r>(
         &'s self,
-        _exec: &Executor<'r, 'a, Context>,
+        _exec: &Executor<Context>,
         _: &QueryTrail<'r, SupplierEdge, Walked>,
     ) -> FieldResult<Vec<SupplierEdge>> {
         let edges = self

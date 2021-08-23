@@ -59,9 +59,9 @@ impl InvoiceFields for Invoice {
 pub struct InvoiceEdge(pub domain::invoice::Invoice);
 #[async_trait]
 impl InvoiceEdgeFields for InvoiceEdge {
-    async fn field_node<'s, 'r, 'a>(
+    fn field_node<'s, 'r>(
         &'s self,
-        _exec: &Executor<'r, 'a, Context>,
+        _exec: &Executor<Context>,
         _: &QueryTrail<'r, Invoice, Walked>,
     ) -> FieldResult<Invoice> {
         Ok(Invoice {
@@ -74,9 +74,9 @@ impl InvoiceEdgeFields for InvoiceEdge {
 pub struct InvoiceConnection(pub Vec<domain::invoice::Invoice>);
 #[async_trait]
 impl InvoiceConnectionFields for InvoiceConnection {
-    async fn field_edges<'s, 'r, 'a>(
+    fn field_edges<'s, 'r>(
         &'s self,
-        _exec: &Executor<'r, 'a, Context>,
+        _exec: &Executor<Context>,
         _: &QueryTrail<'r, InvoiceEdge, Walked>,
     ) -> FieldResult<Vec<InvoiceEdge>> {
         let edges = self

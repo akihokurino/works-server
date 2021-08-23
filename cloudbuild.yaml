@@ -1,0 +1,48 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - --target
+      - deploy
+      - --tag=gcr.io/$PROJECT_ID/app:$BUILD_ID
+      - .
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/app:$BUILD_ID
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - beta
+      - container
+      - clusters
+      - get-credentials
+      - app-cluster
+      - --zone=asia-northeast1-a
+      - --project=$PROJECT_ID
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - set
+      - image
+      - deployment/api
+      - api-container=gcr.io/$PROJECT_ID/app:$BUILD_ID
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=asia-northeast1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=app-cluster'
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - set
+      - image
+      - cronjob/sync-invoice
+      - sync-invoice-container=gcr.io/$PROJECT_ID/app:$BUILD_ID
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=asia-northeast1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=app-cluster'
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - set
+      - image
+      - cronjob/create-invoice
+      - create-invoice-container=gcr.io/$PROJECT_ID/app:$BUILD_ID
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=asia-northeast1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=app-cluster'

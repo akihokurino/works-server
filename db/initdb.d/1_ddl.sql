@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `suppliers` (
     `name` VARCHAR(255) NOT NULL,
     `billing_amount` INT(11) NOT NULL,
     `billing_type` INT(11) NOT NULL,
-    `payment_due_on_ym` VARCHAR(255) NOT NULL,
+    `end_ym` VARCHAR(255) NOT NULL,
     `subject` VARCHAR(255) NOT NULL,
     `subject_template` VARCHAR(255) NOT NULL,
     `created_at` DATETIME NOT NULL,

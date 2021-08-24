@@ -32,9 +32,9 @@ impl SupplierFields for Supplier {
         })
     }
 
-    fn field_payment_due_on_ym(&self, _: &Executor<Context>) -> FieldResult<Option<String>> {
-        if !self.supplier.payment_due_on_ym.is_empty() {
-            return Ok(Some(self.supplier.payment_due_on_ym.to_string()));
+    fn field_end_ym(&self, _: &Executor<Context>) -> FieldResult<Option<String>> {
+        if !self.supplier.end_ym.is_empty() {
+            return Ok(Some(self.supplier.end_ym.to_string()));
         }
         Ok(None)
     }

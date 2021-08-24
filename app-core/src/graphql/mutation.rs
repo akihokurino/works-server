@@ -80,7 +80,7 @@ impl MutationFields for Mutation {
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let name: String = input.name;
-        let payment_due_on_ym: String = input.payment_due_on_ym;
+        let end_ym: String = input.end_ym;
         let subject: String = input.subject;
         let subject_template: String = input.subject_template;
         let billing_amount: i32 = input.billing_amount;
@@ -164,7 +164,7 @@ impl MutationFields for Mutation {
                     )
                 }
                 domain::supplier::BillingType::OneTime => {
-                    let ym = domain::YM::from_str(payment_due_on_ym.as_str())?;
+                    let ym = domain::YM::from_str(end_ym.as_str())?;
 
                     domain::supplier::Supplier::new_as_onetime(
                         authorized_user_id,
@@ -209,7 +209,7 @@ impl MutationFields for Mutation {
 
         let id: String = input.id;
         let name: String = input.name;
-        let payment_due_on_ym: String = input.payment_due_on_ym;
+        let end_ym: String = input.end_ym;
         let subject: String = input.subject;
         let subject_template: String = input.subject_template;
         let billing_amount: i32 = input.billing_amount;
@@ -274,7 +274,7 @@ impl MutationFields for Mutation {
                 return Err(CoreError::Forbidden);
             }
 
-            let ym = domain::YM::from_str(payment_due_on_ym.as_str())?;
+            let ym = domain::YM::from_str(end_ym.as_str())?;
 
             supplier.update(
                 contact_id,

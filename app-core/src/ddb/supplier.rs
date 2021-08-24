@@ -22,7 +22,7 @@ pub struct Entity {
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: i32,
-    pub payment_due_on_ym: String,
+    pub end_ym: String,
     pub subject: String,
     pub subject_template: String,
     pub created_at: chrono::NaiveDateTime,
@@ -41,7 +41,7 @@ impl TryFrom<Entity> for domain::supplier::Supplier {
             name: e.name,
             billing_amount: e.billing_amount,
             billing_type: domain::supplier::BillingType::from(e.billing_type),
-            payment_due_on_ym: domain::YM::from_str(e.payment_due_on_ym.as_str())
+            end_ym: domain::YM::from_str(e.end_ym.as_str())
                 .map_err(|_e| "parse ym error".to_string())?,
             subject: e.subject,
             subject_template: e.subject_template,
@@ -61,7 +61,7 @@ impl From<domain::supplier::Supplier> for Entity {
             name: d.name,
             billing_amount: d.billing_amount,
             billing_type: d.billing_type.int(),
-            payment_due_on_ym: d.payment_due_on_ym.to_string(),
+            end_ym: d.end_ym.to_string(),
             subject: d.subject,
             subject_template: d.subject_template,
             created_at: d.created_at,

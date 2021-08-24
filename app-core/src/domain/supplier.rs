@@ -16,7 +16,7 @@ pub struct Supplier {
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: BillingType,
-    pub payment_due_on_ym: YM,
+    pub end_ym: YM,
     pub subject: String,
     pub subject_template: String,
     pub created_at: chrono::NaiveDateTime,
@@ -48,7 +48,7 @@ impl Supplier {
             name,
             billing_amount,
             billing_type: BillingType::Monthly,
-            payment_due_on_ym: YM { year: 0, month: 0 },
+            end_ym: YM { year: 0, month: 0 },
             subject,
             subject_template,
             created_at: now.naive_utc(),
@@ -62,7 +62,7 @@ impl Supplier {
         contact_group_id: String,
         name: String,
         billing_amount: i32,
-        payment_due_on_ym: YM,
+        end_ym: YM,
         subject: String,
         subject_template: String,
         now: DateTime<Utc>,
@@ -75,7 +75,7 @@ impl Supplier {
             name,
             billing_amount,
             billing_type: BillingType::OneTime,
-            payment_due_on_ym,
+            end_ym,
             subject,
             subject_template,
             created_at: now.naive_utc(),
@@ -89,7 +89,7 @@ impl Supplier {
         contact_group_id: String,
         name: String,
         billing_amount: i32,
-        payment_due_on_ym: YM,
+        end_ym: YM,
         subject: String,
         subject_template: String,
         now: DateTime<Utc>,
@@ -103,7 +103,7 @@ impl Supplier {
         self.updated_at = now.naive_utc();
 
         if self.billing_type == BillingType::OneTime {
-            self.payment_due_on_ym = payment_due_on_ym;
+            self.end_ym = end_ym;
         }
     }
 
@@ -193,7 +193,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 200000,
             billing_type: BillingType::OneTime,
-            payment_due_on_ym: YM { year: 0, month: 0 },
+            end_ym: YM { year: 0, month: 0 },
             subject: "".to_string(),
             subject_template: "".to_string(),
             created_at: now.naive_utc(),
@@ -216,7 +216,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 0,
             billing_type: BillingType::OneTime,
-            payment_due_on_ym: YM { year: 0, month: 0 },
+            end_ym: YM { year: 0, month: 0 },
             subject: "通常の件名テスト".to_string(),
             subject_template: "".to_string(),
             created_at: now.naive_utc(),
@@ -236,7 +236,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 0,
             billing_type: BillingType::OneTime,
-            payment_due_on_ym: YM { year: 0, month: 0 },
+            end_ym: YM { year: 0, month: 0 },
             subject: "テンプレートの件名テスト".to_string(),
             subject_template: "{D} {S}".to_string(),
             created_at: now.naive_utc(),
@@ -262,7 +262,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 0,
             billing_type: BillingType::OneTime,
-            payment_due_on_ym: YM { year: 0, month: 0 },
+            end_ym: YM { year: 0, month: 0 },
             subject: "".to_string(),
             subject_template: "".to_string(),
             created_at: now.naive_utc(),

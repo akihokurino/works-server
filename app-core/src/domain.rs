@@ -69,3 +69,45 @@ impl YMD {
         }
     }
 }
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct YM {
+    pub year: u32,
+    pub month: u32,
+}
+
+impl ToString for YM {
+    fn to_string(&self) -> String {
+        if self.is_empty() {
+            return "".to_string();
+        }
+        format!("{:04}-{:02}", self.year, self.month)
+    }
+}
+
+impl FromStr for YM {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            return Ok(YM { year: 0, month: 0 });
+        }
+
+        if s.len() != 7 {
+            return Err("illegal length".to_string());
+        }
+
+        let tmp = s.split("-").collect::<Vec<&str>>();
+
+        Ok(YM {
+            year: tmp[0].parse().unwrap(),
+            month: tmp[1].parse().unwrap(),
+        })
+    }
+}
+
+impl YM {
+    pub fn is_empty(&self) -> bool {
+        self.year == 0 || self.month == 0
+    }
+}

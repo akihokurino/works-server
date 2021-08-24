@@ -32,6 +32,13 @@ impl SupplierFields for Supplier {
         })
     }
 
+    fn field_payment_due_on_ym(&self, _: &Executor<Context>) -> FieldResult<Option<String>> {
+        if !self.supplier.payment_due_on_ym.is_empty() {
+            return Ok(Some(self.supplier.payment_due_on_ym.to_string()));
+        }
+        Ok(None)
+    }
+
     fn field_subject(&self, _: &Executor<Context>) -> FieldResult<String> {
         Ok(self.supplier.subject.clone())
     }

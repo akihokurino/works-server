@@ -1,4 +1,5 @@
 use crate::domain::invoice::Invoice;
+use crate::domain::YM;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use uuid::Uuid;
 
@@ -15,6 +16,7 @@ pub struct Supplier {
     pub name: String,
     pub billing_amount: i32,
     pub billing_type: BillingType,
+    pub payment_due_on_ym: YM,
     pub subject: String,
     pub subject_template: String,
     pub created_at: chrono::NaiveDateTime,
@@ -28,13 +30,12 @@ pub struct SupplierWithInvoices {
 }
 
 impl Supplier {
-    pub fn new(
+    pub fn new_as_monthly(
         user_id: String,
         contact_id: String,
         contact_group_id: String,
         name: String,
         billing_amount: i32,
-        billing_type: BillingType,
         subject: String,
         subject_template: String,
         now: DateTime<Utc>,
@@ -46,7 +47,35 @@ impl Supplier {
             contact_group_id,
             name,
             billing_amount,
-            billing_type,
+            billing_type: BillingType::Monthly,
+            payment_due_on_ym: YM { year: 0, month: 0 },
+            subject,
+            subject_template,
+            created_at: now.naive_utc(),
+            updated_at: now.naive_utc(),
+        }
+    }
+
+    pub fn new_as_onetime(
+        user_id: String,
+        contact_id: String,
+        contact_group_id: String,
+        name: String,
+        billing_amount: i32,
+        payment_due_on_ym: YM,
+        subject: String,
+        subject_template: String,
+        now: DateTime<Utc>,
+    ) -> Self {
+        Supplier {
+            id: Uuid::new_v4().to_string(),
+            user_id,
+            contact_id,
+            contact_group_id,
+            name,
+            billing_amount,
+            billing_type: BillingType::OneTime,
+            payment_due_on_ym,
             subject,
             subject_template,
             created_at: now.naive_utc(),
@@ -60,6 +89,7 @@ impl Supplier {
         contact_group_id: String,
         name: String,
         billing_amount: i32,
+        payment_due_on_ym: YM,
         subject: String,
         subject_template: String,
         now: DateTime<Utc>,
@@ -71,6 +101,10 @@ impl Supplier {
         self.subject = subject;
         self.subject_template = subject_template;
         self.updated_at = now.naive_utc();
+
+        if self.billing_type == BillingType::OneTime {
+            self.payment_due_on_ym = payment_due_on_ym;
+        }
     }
 
     pub fn billing_amount_include_tax(&self) -> i32 {
@@ -144,6 +178,7 @@ impl From<i32> for BillingType {
 #[cfg(test)]
 mod supplier_tests {
     use crate::domain::supplier::{BillingType, Supplier};
+    use crate::domain::YM;
     use chrono::{NaiveDateTime, TimeZone, Utc};
 
     #[test]
@@ -158,6 +193,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 200000,
             billing_type: BillingType::OneTime,
+            payment_due_on_ym: YM { year: 0, month: 0 },
             subject: "".to_string(),
             subject_template: "".to_string(),
             created_at: now.naive_utc(),
@@ -180,6 +216,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 0,
             billing_type: BillingType::OneTime,
+            payment_due_on_ym: YM { year: 0, month: 0 },
             subject: "通常の件名テスト".to_string(),
             subject_template: "".to_string(),
             created_at: now.naive_utc(),
@@ -199,6 +236,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 0,
             billing_type: BillingType::OneTime,
+            payment_due_on_ym: YM { year: 0, month: 0 },
             subject: "テンプレートの件名テスト".to_string(),
             subject_template: "{D} {S}".to_string(),
             created_at: now.naive_utc(),
@@ -224,6 +262,7 @@ mod supplier_tests {
             name: "".to_string(),
             billing_amount: 0,
             billing_type: BillingType::OneTime,
+            payment_due_on_ym: YM { year: 0, month: 0 },
             subject: "".to_string(),
             subject_template: "".to_string(),
             created_at: now.naive_utc(),

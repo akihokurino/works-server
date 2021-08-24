@@ -14,6 +14,7 @@ use chrono::{DateTime, Utc};
 use cloud_storage::Object;
 use juniper::{Executor, FieldResult};
 use juniper_from_schema::{QueryTrail, Walked};
+use std::str::FromStr;
 
 pub struct Mutation;
 #[async_trait]
@@ -79,6 +80,7 @@ impl MutationFields for Mutation {
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let name: String = input.name;
+        let payment_due_on_ym: String = input.payment_due_on_ym;
         let subject: String = input.subject;
         let subject_template: String = input.subject_template;
         let billing_amount: i32 = input.billing_amount;
@@ -148,17 +150,35 @@ impl MutationFields for Mutation {
         }
 
         let supplier = Tx::run(&conn, || {
-            let supplier = domain::supplier::Supplier::new(
-                authorized_user_id,
-                contact_id,
-                contact_group_id,
-                name,
-                billing_amount,
-                billing_type,
-                subject,
-                subject_template,
-                now,
-            );
+            let supplier = match billing_type {
+                domain::supplier::BillingType::Monthly => {
+                    domain::supplier::Supplier::new_as_monthly(
+                        authorized_user_id,
+                        contact_id,
+                        contact_group_id,
+                        name,
+                        billing_amount,
+                        subject,
+                        subject_template,
+                        now,
+                    )
+                }
+                domain::supplier::BillingType::OneTime => {
+                    let ym = domain::YM::from_str(payment_due_on_ym.as_str())?;
+
+                    domain::supplier::Supplier::new_as_onetime(
+                        authorized_user_id,
+                        contact_id,
+                        contact_group_id,
+                        name,
+                        billing_amount,
+                        ym,
+                        subject,
+                        subject_template,
+                        now,
+                    )
+                }
+            };
             supplier_dao.insert(&conn, &supplier)?;
             Ok(supplier)
         })
@@ -189,6 +209,7 @@ impl MutationFields for Mutation {
 
         let id: String = input.id;
         let name: String = input.name;
+        let payment_due_on_ym: String = input.payment_due_on_ym;
         let subject: String = input.subject;
         let subject_template: String = input.subject_template;
         let billing_amount: i32 = input.billing_amount;
@@ -253,11 +274,14 @@ impl MutationFields for Mutation {
                 return Err(CoreError::Forbidden);
             }
 
+            let ym = domain::YM::from_str(payment_due_on_ym.as_str())?;
+
             supplier.update(
                 contact_id,
                 contact_group_id,
                 name,
                 billing_amount,
+                ym,
                 subject,
                 subject_template,
                 now,

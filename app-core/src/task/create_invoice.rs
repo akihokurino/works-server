@@ -81,6 +81,8 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
             month: first_day_in_last_month.month(),
         };
 
+        println!("先月: {:?}", last_month);
+
         for supplier in suppliers
             .clone()
             .into_iter()

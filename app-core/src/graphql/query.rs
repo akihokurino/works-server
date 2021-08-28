@@ -15,8 +15,7 @@ impl QueryFields for Query {
         _: &QueryTrail<'r, Me, Walked>,
     ) -> FieldResult<Me> {
         let ctx = exec.context();
-        let conn = ctx.get_connection();
-        let conn = conn.lock().unwrap();
+        let conn = ctx.get_mutex_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let authorized_user_id = ctx
             .authenticated_user_id
@@ -36,7 +35,7 @@ impl QueryFields for Query {
         _: &QueryTrail<'r, SupplierConnection, Walked>,
     ) -> FieldResult<SupplierConnection> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let authorized_user_id = ctx
             .authenticated_user_id
@@ -57,7 +56,7 @@ impl QueryFields for Query {
         supplier_id: String,
     ) -> FieldResult<InvoiceConnection> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let authorized_user_id = ctx
@@ -86,7 +85,7 @@ impl QueryFields for Query {
         _: &QueryTrail<'r, InvoiceHistoryConnection, Walked>,
     ) -> FieldResult<InvoiceHistoryConnection> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let authorized_user_id = ctx
             .authenticated_user_id

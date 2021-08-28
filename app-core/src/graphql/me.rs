@@ -18,7 +18,7 @@ impl MeFields for Me {
         _: &QueryTrail<'r, supplier::SupplierConnection, Walked>,
     ) -> FieldResult<supplier::SupplierConnection> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
 
         let suppliers = supplier_dao
@@ -34,7 +34,7 @@ impl MeFields for Me {
         _: &QueryTrail<'r, sender::Sender, Walked>,
     ) -> FieldResult<Option<sender::Sender>> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
 
         let senders = sender_dao
@@ -55,7 +55,7 @@ impl MeFields for Me {
         _: &QueryTrail<'r, bank::Bank, Walked>,
     ) -> FieldResult<Option<bank::Bank>> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
 
         let banks = bank_dao

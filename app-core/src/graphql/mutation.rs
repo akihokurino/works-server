@@ -34,7 +34,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<Me> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let authorized_user_id = ctx
             .authenticated_user_id
@@ -70,7 +70,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<Supplier> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_new_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let misoca_cli = &ctx.misoca_cli;
@@ -198,7 +198,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<Supplier> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_new_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let misoca_cli = &ctx.misoca_cli;
@@ -303,7 +303,7 @@ impl MutationFields for Mutation {
         input: DeleteSupplierInput,
     ) -> FieldResult<bool> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let authorized_user_id = ctx
@@ -335,7 +335,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<bool> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_new_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
@@ -410,7 +410,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<bool> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_new_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
@@ -493,7 +493,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<String> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_new_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let misoca_cli = &ctx.misoca_cli;
@@ -588,7 +588,7 @@ impl MutationFields for Mutation {
         input: DeleteInvoiceInput,
     ) -> FieldResult<bool> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let authorized_user_id = ctx
@@ -622,7 +622,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<Bank> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
         let authorized_user_id = ctx
             .authenticated_user_id
@@ -668,7 +668,7 @@ impl MutationFields for Mutation {
         input: DeleteBankInput,
     ) -> FieldResult<bool> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
         let authorized_user_id = ctx
             .authenticated_user_id
@@ -698,7 +698,7 @@ impl MutationFields for Mutation {
     ) -> FieldResult<Sender> {
         let now: DateTime<Utc> = Utc::now();
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
         let authorized_user_id = ctx
             .authenticated_user_id
@@ -743,7 +743,7 @@ impl MutationFields for Mutation {
         input: DeleteSenderInput,
     ) -> FieldResult<bool> {
         let ctx = exec.context();
-        let conn = ddb::establish_connection();
+        let conn = ctx.get_mutex_connection();
         let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
         let authorized_user_id = ctx
             .authenticated_user_id

@@ -20,7 +20,7 @@ use crate::misoca;
 use diesel::MysqlConnection;
 use juniper::*;
 use juniper_from_schema::graphql_schema_from_file;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 #[allow(unused)]
 graphql_schema_from_file!("src/graphql/schema.graphql", context_type: Context);
@@ -28,7 +28,7 @@ graphql_schema_from_file!("src/graphql/schema.graphql", context_type: Context);
 pub struct Context {
     pub authenticated_user_id: Option<String>,
     pub misoca_cli: misoca::Client,
-    pub connection: SingleCache<Mutex<MysqlConnection>>,
+    pub connection: Arc<Mutex<MysqlConnection>>,
 }
 
 impl juniper::Context for Context {}
@@ -38,7 +38,7 @@ impl Context {
         Self {
             authenticated_user_id,
             misoca_cli,
-            connection: SingleCache::new(),
+            connection: Arc::new(Mutex::new(ddb::establish_connection())),
         }
     }
 
@@ -46,34 +46,15 @@ impl Context {
         ddb::Dao::new()
     }
 
-    pub fn get_connection(&self) -> Arc<Mutex<MysqlConnection>> {
-        self.connection
-            .get_or_create(|| Mutex::new(ddb::establish_connection()))
+    pub fn get_mutex_connection(&self) -> MutexGuard<MysqlConnection> {
+        self.connection.lock().unwrap()
+    }
+
+    pub fn get_new_connection(&self) -> MysqlConnection {
+        ddb::establish_connection()
     }
 }
 
 pub fn new_schema() -> Schema {
     Schema::new(Query {}, Mutation {}, EmptySubscription::new())
-}
-
-pub struct SingleCache<T> {
-    cache: Arc<Mutex<Option<Arc<T>>>>,
-}
-
-impl<T> SingleCache<T> {
-    pub fn new() -> Self {
-        Self {
-            cache: Arc::new(Mutex::new(None)),
-        }
-    }
-
-    pub fn get_or_create<F: Fn() -> T>(&self, create_fn: F) -> Arc<T> {
-        let mut mutex = self.cache.lock().unwrap();
-        if let Some(v) = mutex.as_ref() {
-            Arc::clone(v)
-        } else {
-            *mutex = Some(Arc::new(create_fn()));
-            Arc::clone(mutex.as_ref().unwrap())
-        }
-    }
 }

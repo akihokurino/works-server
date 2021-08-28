@@ -34,8 +34,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         let senders = sender_dao.get_all_by_user(&conn, only_user.id.clone())?;
 
         for supplier in suppliers
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|v| v.billing_type == domain::supplier::BillingType::Monthly)
             .collect::<Vec<_>>()
         {
@@ -84,8 +83,7 @@ pub async fn exec(misoca_cli: misoca::Client, now: DateTime<Utc>) -> CoreResult<
         println!("先月: {:?}", last_month);
 
         for supplier in suppliers
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|v| v.billing_type == domain::supplier::BillingType::OneTime)
             .collect::<Vec<_>>()
         {

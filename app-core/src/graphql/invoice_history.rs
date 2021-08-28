@@ -64,8 +64,7 @@ impl InvoiceHistoryConnectionFields for InvoiceHistoryConnection {
     ) -> FieldResult<Vec<InvoiceHistoryEdge>> {
         let edges = self
             .0
-            .clone()
-            .into_iter()
+            .iter()
             .map(|v| InvoiceHistoryEdge(v.0.clone(), v.1.clone()))
             .collect::<Vec<_>>();
         Ok(edges)

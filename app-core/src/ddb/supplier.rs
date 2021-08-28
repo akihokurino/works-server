@@ -109,7 +109,7 @@ impl Dao<domain::supplier::Supplier> {
             supplier_entities
                 .clone()
                 .into_iter()
-                .zip(invoice_entities.clone().grouped_by(&supplier_entities))
+                .zip(invoice_entities.grouped_by(&supplier_entities))
                 .collect::<Vec<_>>();
 
         Ok(supplier_entities_with_invoices

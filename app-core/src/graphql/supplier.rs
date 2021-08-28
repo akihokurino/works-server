@@ -83,8 +83,7 @@ impl SupplierConnectionFields for SupplierConnection {
     ) -> FieldResult<Vec<SupplierEdge>> {
         let edges = self
             .0
-            .clone()
-            .into_iter()
+            .iter()
             .map(|v| SupplierEdge(v.clone()))
             .collect::<Vec<_>>();
         Ok(edges)

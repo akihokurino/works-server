@@ -55,19 +55,17 @@ async fn graphql_route(
     misoca_cli: web::Data<misoca::Client>,
 ) -> actix_web::Result<HttpResponse> {
     // 開発用
-    let authorized_user_id: Option<String> = match req.headers().get("x-user-id") {
+    let authenticated_user_id: Option<String> = match req.headers().get("x-user-id") {
         Some(v) => v.to_str().map(|id| Some(id.to_string())).unwrap_or(None),
         None => auth(&req).await.into(),
     };
 
-    if let Some(id) = authorized_user_id.clone() {
+    if let Some(id) = authenticated_user_id.clone() {
         println!("login user id: {}", id);
     }
 
-    let context = graphql::Context {
-        authorized_user_id,
-        misoca_cli: misoca_cli.get_ref().clone(),
-    };
+    let context = graphql::Context::new(authenticated_user_id, misoca_cli.get_ref().clone());
+
     graphql_handler(&schema, &context, req, payload).await
 }
 

@@ -37,7 +37,7 @@ impl MutationFields for Mutation {
         let conn = ddb::establish_connection();
         let user_dao = ctx.ddb_dao::<domain::user::User>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -75,7 +75,7 @@ impl MutationFields for Mutation {
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -203,7 +203,7 @@ impl MutationFields for Mutation {
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -307,7 +307,7 @@ impl MutationFields for Mutation {
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -341,7 +341,7 @@ impl MutationFields for Mutation {
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -416,7 +416,7 @@ impl MutationFields for Mutation {
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -498,7 +498,7 @@ impl MutationFields for Mutation {
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let misoca_cli = &ctx.misoca_cli;
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -592,7 +592,7 @@ impl MutationFields for Mutation {
         let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
         let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -625,7 +625,7 @@ impl MutationFields for Mutation {
         let conn = ddb::establish_connection();
         let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -671,7 +671,7 @@ impl MutationFields for Mutation {
         let conn = ddb::establish_connection();
         let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -701,7 +701,7 @@ impl MutationFields for Mutation {
         let conn = ddb::establish_connection();
         let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
@@ -746,7 +746,7 @@ impl MutationFields for Mutation {
         let conn = ddb::establish_connection();
         let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
         let authorized_user_id = ctx
-            .authorized_user_id
+            .authenticated_user_id
             .clone()
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 

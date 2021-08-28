@@ -81,8 +81,7 @@ impl InvoiceConnectionFields for InvoiceConnection {
     ) -> FieldResult<Vec<InvoiceEdge>> {
         let edges = self
             .0
-            .clone()
-            .into_iter()
+            .iter()
             .map(|v| InvoiceEdge(v.clone()))
             .collect::<Vec<_>>();
         Ok(edges)

@@ -1,3 +1,4 @@
+use crate::ddb::Dao;
 use crate::graphql::invoice::InvoiceConnection;
 use crate::graphql::Context;
 use crate::graphql::*;
@@ -16,7 +17,7 @@ impl QueryFields for Query {
     ) -> FieldResult<Me> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let user_dao = ctx.ddb_dao::<domain::user::User>();
+        let user_dao: Dao<domain::user::User> = Dao::new();
         let authenticated_user_id = ctx
             .authenticated_user_id
             .clone()
@@ -36,7 +37,7 @@ impl QueryFields for Query {
     ) -> FieldResult<SupplierConnection> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let supplier_dao: Dao<domain::supplier::Supplier> = Dao::new();
         let authenticated_user_id = ctx
             .authenticated_user_id
             .clone()
@@ -57,8 +58,8 @@ impl QueryFields for Query {
     ) -> FieldResult<InvoiceConnection> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
-        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
+        let supplier_dao: Dao<domain::supplier::Supplier> = Dao::new();
+        let invoice_dao: Dao<domain::invoice::Invoice> = Dao::new();
         let authenticated_user_id = ctx
             .authenticated_user_id
             .clone()
@@ -86,7 +87,7 @@ impl QueryFields for Query {
     ) -> FieldResult<InvoiceHistoryConnection> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let invoice_dao = ctx.ddb_dao::<domain::invoice::Invoice>();
+        let invoice_dao: Dao<domain::invoice::Invoice> = Dao::new();
         let authenticated_user_id = ctx
             .authenticated_user_id
             .clone()

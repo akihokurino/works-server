@@ -30,21 +30,22 @@ pub struct Context {
     pub authenticated_user_id: Option<String>,
     pub misoca_cli: misoca::Client,
     pub connection: Arc<Mutex<MysqlConnection>>,
+    pub invoice_loader_by_supplier: ddb::invoice::LoaderBySupplier,
 }
 
 impl juniper::Context for Context {}
 
 impl Context {
     pub fn new(authenticated_user_id: Option<String>, misoca_cli: misoca::Client) -> Self {
+        let conn_ref = Arc::new(Mutex::new(ddb::establish_connection()));
         Self {
             authenticated_user_id,
             misoca_cli,
-            connection: Arc::new(Mutex::new(ddb::establish_connection())),
+            connection: Arc::clone(&conn_ref),
+            invoice_loader_by_supplier: ddb::invoice::BatcherBySupplier::new_loader(Arc::clone(
+                &conn_ref,
+            )),
         }
-    }
-
-    pub fn ddb_dao<T>(&self) -> ddb::Dao<T> {
-        ddb::Dao::new()
     }
 
     pub fn get_mutex_connection(&self) -> MutexGuard<MysqlConnection> {

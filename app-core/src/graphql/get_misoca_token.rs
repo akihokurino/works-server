@@ -1,4 +1,4 @@
-use crate::ddb::Tx;
+use crate::ddb::{Dao, Tx};
 use crate::domain;
 use crate::graphql;
 use crate::misoca;
@@ -6,8 +6,8 @@ use crate::{CoreError, CoreResult};
 use chrono::{DateTime, Utc};
 
 pub async fn exec(ctx: &graphql::Context, now: DateTime<Utc>) -> CoreResult<String> {
-    let user_dao = ctx.ddb_dao::<domain::user::User>();
     let conn = ctx.get_new_connection();
+    let user_dao: Dao<domain::user::User> = Dao::new();
     let misoca_cli = ctx.misoca_cli.clone();
     let authenticated_user_id = ctx
         .authenticated_user_id

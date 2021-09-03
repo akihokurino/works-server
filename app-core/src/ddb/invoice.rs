@@ -4,10 +4,14 @@ use crate::ddb::supplier;
 use crate::ddb::Dao;
 use crate::domain;
 use crate::{CoreError, CoreResult};
+use async_trait::async_trait;
+use dataloader::{cached, BatchFn};
 use diesel::dsl::*;
 use diesel::prelude::*;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
 #[derive(
     Queryable, Insertable, Debug, Clone, Eq, PartialEq, Identifiable, Associations, AsChangeset,
@@ -203,4 +207,71 @@ impl Dao<domain::invoice::Invoice> {
         }
         Ok(())
     }
+
+    fn batch_get_by_supplier(
+        &self,
+        conn: &MysqlConnection,
+        hashmap: &mut HashMap<String, CoreResult<Vec<domain::invoice::Invoice>>>,
+        supplier_ids: Vec<String>,
+    ) {
+        let result: CoreResult<Vec<domain::invoice::Invoice>> = invoices::table
+            .filter(invoices::supplier_id.eq_any(supplier_ids.clone()))
+            .order(invoices::issue_at.desc())
+            .load::<Entity>(conn)
+            .map(|v: Vec<Entity>| {
+                v.into_iter()
+                    .map(|v| domain::invoice::Invoice::try_from(v).unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .map_err(CoreError::from);
+
+        if let Err(e) = result {
+            for id in supplier_ids {
+                hashmap.insert(id, Err(e.to_owned()));
+            }
+            return;
+        }
+
+        let items = result.unwrap();
+
+        for id in supplier_ids {
+            let mut vec = vec![];
+            for row in items.iter().filter(|v| v.supplier_id == id) {
+                vec.push(row.to_owned());
+            }
+            hashmap.insert(id.to_owned(), Ok(vec));
+        }
+    }
 }
+
+pub struct BatcherBySupplier {
+    dao: Dao<domain::invoice::Invoice>,
+    conn: Arc<Mutex<MysqlConnection>>,
+}
+
+#[async_trait]
+impl BatchFn<String, CoreResult<Vec<domain::invoice::Invoice>>> for BatcherBySupplier {
+    async fn load(
+        &mut self,
+        keys: &[String],
+    ) -> HashMap<String, CoreResult<Vec<domain::invoice::Invoice>>> {
+        let conn = self.conn.lock().unwrap();
+        let mut hashmap = HashMap::new();
+        self.dao
+            .batch_get_by_supplier(&conn, &mut hashmap, keys.to_vec());
+        hashmap
+    }
+}
+
+impl BatcherBySupplier {
+    pub fn new_loader(conn: Arc<Mutex<MysqlConnection>>) -> LoaderBySupplier {
+        cached::Loader::new(BatcherBySupplier {
+            dao: Dao::new(),
+            conn,
+        })
+        .with_max_batch_size(100)
+    }
+}
+
+pub type LoaderBySupplier =
+    cached::Loader<String, CoreResult<Vec<domain::invoice::Invoice>>, BatcherBySupplier>;

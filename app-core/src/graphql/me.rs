@@ -1,3 +1,4 @@
+use crate::ddb::Dao;
 use crate::graphql::*;
 use crate::{domain, FieldErrorWithCode};
 use juniper_from_schema::{QueryTrail, Walked};
@@ -19,7 +20,7 @@ impl MeFields for Me {
     ) -> FieldResult<supplier::SupplierConnection> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let supplier_dao = ctx.ddb_dao::<domain::supplier::Supplier>();
+        let supplier_dao: Dao<domain::supplier::Supplier> = Dao::new();
 
         let suppliers = supplier_dao
             .get_all_by_user_with_invoices(&conn, self.user.id.clone())
@@ -35,7 +36,7 @@ impl MeFields for Me {
     ) -> FieldResult<Option<sender::Sender>> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let sender_dao = ctx.ddb_dao::<domain::sender::Sender>();
+        let sender_dao: Dao<domain::sender::Sender> = Dao::new();
 
         let senders = sender_dao
             .get_all_by_user(&conn, self.user.id.clone())
@@ -56,7 +57,7 @@ impl MeFields for Me {
     ) -> FieldResult<Option<bank::Bank>> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
-        let bank_dao = ctx.ddb_dao::<domain::bank::Bank>();
+        let bank_dao: Dao<domain::bank::Bank> = Dao::new();
 
         let banks = bank_dao
             .get_all_by_user(&conn, self.user.id.clone())

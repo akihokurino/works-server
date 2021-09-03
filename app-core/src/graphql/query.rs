@@ -44,7 +44,7 @@ impl QueryFields for Query {
             .ok_or(FieldErrorWithCode::from(CoreError::UnAuthenticate))?;
 
         let suppliers = supplier_dao
-            .get_all_by_user_with_invoices(&conn, authenticated_user_id)
+            .get_all_by_user(&conn, authenticated_user_id)
             .map_err(FieldErrorWithCode::from)?;
 
         Ok(SupplierConnection(suppliers))

@@ -5,7 +5,6 @@ use juniper_from_schema::{QueryTrail, Walked};
 #[derive(Debug, Clone)]
 pub struct Supplier {
     pub supplier: domain::supplier::Supplier,
-    pub invoices: Vec<domain::invoice::Invoice>,
 }
 #[async_trait]
 impl SupplierFields for Supplier {
@@ -47,17 +46,24 @@ impl SupplierFields for Supplier {
         Ok(self.supplier.subject_template.clone())
     }
 
-    fn field_invoice_list<'s, 'r>(
+    async fn field_invoice_list<'s, 'r, 'a>(
         &'s self,
-        _: &Executor<Context>,
+        exec: &Executor<'r, 'a, Context>,
         _: &QueryTrail<'r, InvoiceConnection, Walked>,
     ) -> FieldResult<InvoiceConnection> {
-        Ok(InvoiceConnection(self.invoices.clone()))
+        let ctx = exec.context();
+
+        let invoices: Vec<domain::invoice::Invoice> = ctx
+            .invoice_loader_by_supplier
+            .load(self.supplier.id.clone())
+            .await?;
+
+        Ok(InvoiceConnection(invoices))
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct SupplierEdge(pub domain::supplier::SupplierWithInvoices);
+pub struct SupplierEdge(pub domain::supplier::Supplier);
 #[async_trait]
 impl SupplierEdgeFields for SupplierEdge {
     fn field_node<'s, 'r>(
@@ -66,14 +72,13 @@ impl SupplierEdgeFields for SupplierEdge {
         _: &QueryTrail<'r, Supplier, Walked>,
     ) -> FieldResult<Supplier> {
         Ok(Supplier {
-            supplier: self.0.supplier.clone(),
-            invoices: self.0.invoices.clone(),
+            supplier: self.0.to_owned(),
         })
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct SupplierConnection(pub Vec<domain::supplier::SupplierWithInvoices>);
+pub struct SupplierConnection(pub Vec<domain::supplier::Supplier>);
 #[async_trait]
 impl SupplierConnectionFields for SupplierConnection {
     fn field_edges<'s, 'r>(
@@ -84,7 +89,7 @@ impl SupplierConnectionFields for SupplierConnection {
         let edges = self
             .0
             .iter()
-            .map(|v| SupplierEdge(v.clone()))
+            .map(|v| SupplierEdge(v.to_owned()))
             .collect::<Vec<_>>();
         Ok(edges)
     }

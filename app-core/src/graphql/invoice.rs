@@ -65,7 +65,7 @@ impl InvoiceEdgeFields for InvoiceEdge {
         _: &QueryTrail<'r, Invoice, Walked>,
     ) -> FieldResult<Invoice> {
         Ok(Invoice {
-            invoice: self.0.clone(),
+            invoice: self.0.to_owned(),
         })
     }
 }
@@ -82,7 +82,7 @@ impl InvoiceConnectionFields for InvoiceConnection {
         let edges = self
             .0
             .iter()
-            .map(|v| InvoiceEdge(v.clone()))
+            .map(|v| InvoiceEdge(v.to_owned()))
             .collect::<Vec<_>>();
         Ok(edges)
     }

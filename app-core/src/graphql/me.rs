@@ -23,7 +23,7 @@ impl MeFields for Me {
         let supplier_dao: Dao<domain::supplier::Supplier> = Dao::new();
 
         let suppliers = supplier_dao
-            .get_all_by_user_with_invoices(&conn, self.user.id.clone())
+            .get_all_by_user(&conn, self.user.id.clone())
             .map_err(FieldErrorWithCode::from)?;
 
         Ok(supplier::SupplierConnection(suppliers))
@@ -44,7 +44,7 @@ impl MeFields for Me {
 
         if let Some(sender) = senders.first() {
             return Ok(Some(sender::Sender {
-                sender: sender.clone(),
+                sender: sender.to_owned(),
             }));
         }
         Ok(None)
@@ -64,7 +64,9 @@ impl MeFields for Me {
             .map_err(FieldErrorWithCode::from)?;
 
         if let Some(bank) = banks.first() {
-            return Ok(Some(bank::Bank { bank: bank.clone() }));
+            return Ok(Some(bank::Bank {
+                bank: bank.to_owned(),
+            }));
         }
         Ok(None)
     }

@@ -19,7 +19,7 @@ impl InvoiceHistoryFields for InvoiceHistory {
         _: &QueryTrail<'r, Invoice, Walked>,
     ) -> FieldResult<Invoice> {
         Ok(Invoice {
-            invoice: self.invoice.clone(),
+            invoice: self.invoice.to_owned(),
         })
     }
 
@@ -29,8 +29,7 @@ impl InvoiceHistoryFields for InvoiceHistory {
         _: &QueryTrail<'r, Supplier, Walked>,
     ) -> FieldResult<Supplier> {
         Ok(Supplier {
-            supplier: self.supplier.clone(),
-            invoices: vec![],
+            supplier: self.supplier.to_owned(),
         })
     }
 }
@@ -45,8 +44,8 @@ impl InvoiceHistoryEdgeFields for InvoiceHistoryEdge {
         _: &QueryTrail<'r, InvoiceHistory, Walked>,
     ) -> FieldResult<InvoiceHistory> {
         Ok(InvoiceHistory {
-            invoice: self.0.clone(),
-            supplier: self.1.clone(),
+            invoice: self.0.to_owned(),
+            supplier: self.1.to_owned(),
         })
     }
 }
@@ -65,7 +64,7 @@ impl InvoiceHistoryConnectionFields for InvoiceHistoryConnection {
         let edges = self
             .0
             .iter()
-            .map(|v| InvoiceHistoryEdge(v.0.clone(), v.1.clone()))
+            .map(|v| InvoiceHistoryEdge(v.0.to_owned(), v.1.to_owned()))
             .collect::<Vec<_>>();
         Ok(edges)
     }

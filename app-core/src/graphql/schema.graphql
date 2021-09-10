@@ -14,9 +14,9 @@ schema {
 
 type Query {
     me: Me! @juniper(ownership: "owned", async: true)
-    supplierList: SupplierConnection! @juniper(ownership: "owned", async: true)
-    invoiceList(supplierId: String!): InvoiceConnection! @juniper(ownership: "owned", async: true)
-    invoiceHistoryList: InvoiceHistoryConnection! @juniper(ownership: "owned", async: true)
+    supplierList: [Supplier!]! @juniper(ownership: "owned", async: true)
+    invoiceList(supplierId: String!, page: Int!, limit: Int!): InvoiceConnection! @juniper(ownership: "owned", async: true)
+    invoiceHistoryList(page: Int!, limit: Int!): InvoiceHistoryConnection! @juniper(ownership: "owned", async: true)
 }
 
 type Mutation {
@@ -39,9 +39,14 @@ interface Node {
     id: ID! @juniper(ownership: "owned")
 }
 
+type PageInfo {
+    totalCount: Int! @juniper(ownership: "owned")
+    hasNextPage: Boolean! @juniper(ownership: "owned")
+}
+
 type Me implements Node {
     id: ID! @juniper(ownership: "owned")
-    supplierList: SupplierConnection! @juniper(ownership: "owned", async: true)
+    supplierList: [Supplier!]! @juniper(ownership: "owned", async: true)
     sender: Sender @juniper(ownership: "owned", async: true)
     bank: Bank @juniper(ownership: "owned", async: true)
 }
@@ -55,15 +60,7 @@ type Supplier implements Node {
     endYm: String @juniper(ownership: "owned")
     subject: String! @juniper(ownership: "owned")
     subjectTemplate: String! @juniper(ownership: "owned")
-    invoiceList: InvoiceConnection! @juniper(ownership: "owned", async: true)
-}
-
-type SupplierEdge {
-    node: Supplier! @juniper(ownership: "owned")
-}
-
-type SupplierConnection {
-    edges: [SupplierEdge!]! @juniper(ownership: "owned")
+    latestInvoiceList: [Invoice!]! @juniper(ownership: "owned", async: true)
 }
 
 type Invoice implements Node {
@@ -85,6 +82,7 @@ type InvoiceEdge {
 
 type InvoiceConnection {
     edges: [InvoiceEdge!]! @juniper(ownership: "owned")
+    pageInfo: PageInfo! @juniper(ownership: "owned")
 }
 
 type InvoiceHistory implements Node {
@@ -99,6 +97,7 @@ type InvoiceHistoryEdge {
 
 type InvoiceHistoryConnection {
     edges: [InvoiceHistoryEdge!]! @juniper(ownership: "owned")
+    pageInfo: PageInfo! @juniper(ownership: "owned")
 }
 
 type Bank implements Node {

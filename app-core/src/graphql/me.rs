@@ -16,8 +16,8 @@ impl MeFields for Me {
     async fn field_supplier_list<'s, 'r, 'a>(
         &'s self,
         exec: &Executor<'r, 'a, Context>,
-        _: &QueryTrail<'r, supplier::SupplierConnection, Walked>,
-    ) -> FieldResult<supplier::SupplierConnection> {
+        _: &QueryTrail<'r, supplier::Supplier, Walked>,
+    ) -> FieldResult<Vec<supplier::Supplier>> {
         let ctx = exec.context();
         let conn = ctx.get_mutex_connection();
         let supplier_dao: Dao<domain::supplier::Supplier> = Dao::new();
@@ -26,7 +26,12 @@ impl MeFields for Me {
             .get_all_by_user(&conn, self.user.id.clone())
             .map_err(FieldErrorWithCode::from)?;
 
-        Ok(supplier::SupplierConnection(suppliers))
+        Ok(suppliers
+            .iter()
+            .map(|v| supplier::Supplier {
+                supplier: v.to_owned(),
+            })
+            .collect())
     }
 
     async fn field_sender<'s, 'r, 'a>(

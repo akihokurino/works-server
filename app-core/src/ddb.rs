@@ -1,17 +1,20 @@
+use std::env;
+use std::future::Future;
+use std::marker::PhantomData;
+
+use diesel::connection::TransactionManager;
+use diesel::mysql::MysqlConnection;
+use diesel::prelude::*;
+
+use crate::CoreResult;
+
 pub mod bank;
 pub mod invoice;
+pub mod pager;
 mod schema;
 pub mod sender;
 pub mod supplier;
 pub mod user;
-
-use crate::CoreResult;
-use diesel::connection::TransactionManager;
-use diesel::mysql::MysqlConnection;
-use diesel::prelude::*;
-use std::env;
-use std::future::Future;
-use std::marker::PhantomData;
 
 pub fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

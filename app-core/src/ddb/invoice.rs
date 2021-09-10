@@ -1,3 +1,4 @@
+use crate::ddb::pager::Pager;
 use crate::ddb::schema::invoices;
 use crate::ddb::schema::suppliers;
 use crate::ddb::supplier;
@@ -90,10 +91,13 @@ impl Dao<domain::invoice::Invoice> {
         &self,
         conn: &MysqlConnection,
         supplier_id: String,
+        pager: &Pager,
     ) -> CoreResult<Vec<domain::invoice::Invoice>> {
         return invoices::table
             .filter(invoices::supplier_id.eq(supplier_id))
             .order(invoices::issue_at.desc())
+            .limit(pager.get_limit())
+            .offset(pager.get_offset())
             .load::<Entity>(conn)
             .map(|v: Vec<Entity>| {
                 v.into_iter()
@@ -103,15 +107,18 @@ impl Dao<domain::invoice::Invoice> {
             .map_err(CoreError::from);
     }
 
-    pub fn get_all_by_user_with_supplier(
+    pub fn get_all_by_user(
         &self,
         conn: &MysqlConnection,
         user_id: String,
+        pager: &Pager,
     ) -> CoreResult<Vec<(domain::invoice::Invoice, domain::supplier::Supplier)>> {
         return invoices::table
             .inner_join(suppliers::table)
             .filter(suppliers::user_id.eq(user_id))
             .order(invoices::issue_at.desc())
+            .limit(pager.get_limit())
+            .offset(pager.get_offset())
             .load::<(Entity, supplier::Entity)>(conn)
             .map(|v: Vec<(Entity, supplier::Entity)>| {
                 v.into_iter()
@@ -131,6 +138,27 @@ impl Dao<domain::invoice::Invoice> {
             .find(id)
             .first(conn)
             .map(|v: Entity| domain::invoice::Invoice::try_from(v).unwrap())
+            .map_err(CoreError::from)
+    }
+
+    pub fn get_count_by_supplier(
+        &self,
+        conn: &MysqlConnection,
+        supplier_id: String,
+    ) -> CoreResult<i64> {
+        invoices::table
+            .select(count(invoices::id))
+            .filter(invoices::supplier_id.eq(supplier_id))
+            .get_result(conn)
+            .map_err(CoreError::from)
+    }
+
+    pub fn get_count_by_user(&self, conn: &MysqlConnection, user_id: String) -> CoreResult<i64> {
+        invoices::table
+            .select(count(invoices::id))
+            .inner_join(suppliers::table)
+            .filter(suppliers::user_id.eq(user_id))
+            .get_result(conn)
             .map_err(CoreError::from)
     }
 
@@ -217,6 +245,7 @@ impl Dao<domain::invoice::Invoice> {
         let result: CoreResult<Vec<domain::invoice::Invoice>> = invoices::table
             .filter(invoices::supplier_id.eq_any(supplier_ids.clone()))
             .order(invoices::issue_at.desc())
+            .limit(20)
             .load::<Entity>(conn)
             .map(|v: Vec<Entity>| {
                 v.into_iter()

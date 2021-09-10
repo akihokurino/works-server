@@ -46,11 +46,11 @@ impl SupplierFields for Supplier {
         Ok(self.supplier.subject_template.clone())
     }
 
-    async fn field_invoice_list<'s, 'r, 'a>(
+    async fn field_latest_invoice_list<'s, 'r, 'a>(
         &'s self,
         exec: &Executor<'r, 'a, Context>,
-        _: &QueryTrail<'r, InvoiceConnection, Walked>,
-    ) -> FieldResult<InvoiceConnection> {
+        _: &QueryTrail<'r, Invoice, Walked>,
+    ) -> FieldResult<Vec<Invoice>> {
         let ctx = exec.context();
 
         let invoices: Vec<domain::invoice::Invoice> = ctx
@@ -58,39 +58,11 @@ impl SupplierFields for Supplier {
             .load(self.supplier.id.clone())
             .await?;
 
-        Ok(InvoiceConnection(invoices))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct SupplierEdge(pub domain::supplier::Supplier);
-#[async_trait]
-impl SupplierEdgeFields for SupplierEdge {
-    fn field_node<'s, 'r>(
-        &'s self,
-        _exec: &Executor<Context>,
-        _: &QueryTrail<'r, Supplier, Walked>,
-    ) -> FieldResult<Supplier> {
-        Ok(Supplier {
-            supplier: self.0.to_owned(),
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct SupplierConnection(pub Vec<domain::supplier::Supplier>);
-#[async_trait]
-impl SupplierConnectionFields for SupplierConnection {
-    fn field_edges<'s, 'r>(
-        &'s self,
-        _exec: &Executor<Context>,
-        _: &QueryTrail<'r, SupplierEdge, Walked>,
-    ) -> FieldResult<Vec<SupplierEdge>> {
-        let edges = self
-            .0
+        Ok(invoices
             .iter()
-            .map(|v| SupplierEdge(v.to_owned()))
-            .collect::<Vec<_>>();
-        Ok(edges)
+            .map(|v| Invoice {
+                invoice: v.to_owned(),
+            })
+            .collect())
     }
 }

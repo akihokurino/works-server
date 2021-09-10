@@ -51,9 +51,11 @@ impl InvoiceHistoryEdgeFields for InvoiceHistoryEdge {
 }
 
 #[derive(Debug, Clone)]
-pub struct InvoiceHistoryConnection(
-    pub Vec<(domain::invoice::Invoice, domain::supplier::Supplier)>,
-);
+pub struct InvoiceHistoryConnection {
+    pub histories: Vec<(domain::invoice::Invoice, domain::supplier::Supplier)>,
+    pub total_count: i64,
+    pub has_next: bool,
+}
 #[async_trait]
 impl InvoiceHistoryConnectionFields for InvoiceHistoryConnection {
     fn field_edges<'s, 'r>(
@@ -62,10 +64,21 @@ impl InvoiceHistoryConnectionFields for InvoiceHistoryConnection {
         _: &QueryTrail<'r, InvoiceHistoryEdge, Walked>,
     ) -> FieldResult<Vec<InvoiceHistoryEdge>> {
         let edges = self
-            .0
+            .histories
             .iter()
             .map(|v| InvoiceHistoryEdge(v.0.to_owned(), v.1.to_owned()))
             .collect::<Vec<_>>();
         Ok(edges)
+    }
+
+    fn field_page_info<'s, 'r>(
+        &'s self,
+        _exec: &Executor<Context>,
+        _: &QueryTrail<'r, PageInfo, Walked>,
+    ) -> FieldResult<PageInfo> {
+        Ok(PageInfo {
+            total_count: self.total_count.to_owned(),
+            has_next: self.has_next.to_owned(),
+        })
     }
 }

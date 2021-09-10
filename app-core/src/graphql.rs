@@ -1,27 +1,32 @@
+use std::sync::{Arc, Mutex, MutexGuard};
+
+use diesel::MysqlConnection;
+use juniper::*;
+use juniper_from_schema::graphql_schema_from_file;
+
+use crate::ddb;
+use crate::graphql::bank::*;
+use crate::graphql::invoice::*;
+use crate::graphql::invoice_history::*;
+use crate::graphql::me::*;
+use crate::graphql::page_info::*;
+use crate::graphql::sender::*;
+use crate::graphql::supplier::*;
+use crate::misoca;
+
+use self::mutation::*;
+use self::query::*;
+
 mod bank;
 mod get_misoca_token;
 mod invoice;
 mod invoice_history;
 mod me;
 mod mutation;
+mod page_info;
 mod query;
 mod sender;
 mod supplier;
-
-use self::mutation::*;
-use self::query::*;
-use crate::ddb;
-use crate::graphql::bank::*;
-use crate::graphql::invoice::*;
-use crate::graphql::invoice_history::*;
-use crate::graphql::me::*;
-use crate::graphql::sender::*;
-use crate::graphql::supplier::*;
-use crate::misoca;
-use diesel::MysqlConnection;
-use juniper::*;
-use juniper_from_schema::graphql_schema_from_file;
-use std::sync::{Arc, Mutex, MutexGuard};
 
 #[allow(unused)]
 graphql_schema_from_file!("src/graphql/schema.graphql", context_type: Context);

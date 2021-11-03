@@ -4,10 +4,14 @@
 
 ## 構成
 - rust 1.53.0
-- juniper https://github.com/graphql-rust/juniper
-- diesel
+- juniper（ https://github.com/graphql-rust/juniper ）
+- juniper from schema（　https://github.com/davidpdrsn/juniper-from-schema ）
+- 
+- diesel（ https://github.com/diesel-rs/diesel ）
 - k8s
+- cloud sql
 - firebase auth
+- misoca api
 
 <img width="958" alt="スクリーンショット 2021-11-03 23 22 05" src="https://user-images.githubusercontent.com/2268288/140078577-5a01f6b1-5564-44fd-a964-cb729855b546.png">
 

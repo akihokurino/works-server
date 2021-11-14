@@ -1,8 +1,4 @@
-# works-server
-
-請求書管理システム
-
-## 構成
+## Specs
 - rust 1.53.0
 - juniper（ https://github.com/graphql-rust/juniper ）
 - juniper from schema（　https://github.com/davidpdrsn/juniper-from-schema ）
